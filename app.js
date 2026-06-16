@@ -505,8 +505,12 @@ function renderGospelAfterSecondSlava() {
         <div class="prayer-block">
           <h3>Молитва после Евангелия</h3>
           <div class="prayer-text">${renderPrayerText(DATA.prayers.gospelBeforeMatthew?.afterPrayer || GOSPEL_AFTER_PRAYER)}</div>
-          <div class="names-label">Имена после Евангелия</div>
+
+          <div class="names-label">${escapeHtml(DATA.prayers.livingPrayer.namesLabel || "О здравии")}</div>
           <div class="name-cloud">${renderNameCloud(DATA.prayers.livingPrayer.names)}</div>
+
+          <div class="names-label">${escapeHtml(DATA.prayers.departedPrayer.namesLabel || "Об упокоении")}</div>
+          <div class="name-cloud">${renderNameCloud(DATA.prayers.departedPrayer.names)}</div>
         </div>
       `
       : "";
