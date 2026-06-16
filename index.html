@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Псалтирь по кругу</title>
+    <meta
+      name="description"
+      content="Удобное чтение Псалтири по кафизмам с прямым выбором кафизмы и текста на церковнославянском или в синодальном переводе."
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero fade-up">
+        <div class="hero-copy">
+          <p class="eyebrow">Псалтирь по кругу</p>
+          <h1>Красивое и спокойное чтение нужной кафизмы</h1>
+          <p class="hero-text">
+            Выберите язык и нужную кафизму. Сайт соберёт всё в один поток: обычное начало, псалмы, славы, молитвы о
+            живых и усопших, а затем молитву по окончании.
+          </p>
+          <div class="hero-notes">
+            <span class="note-chip">Прямой выбор кафизмы</span>
+            <span class="note-chip">ЦСЯ в гражданском шрифте</span>
+            <span class="note-chip">1 и 2 слава о живых</span>
+            <span class="note-chip">3 слава об усопших</span>
+          </div>
+        </div>
+        <div class="hero-panel">
+          <section class="control-card">
+            <div class="card-heading">
+              <p class="card-kicker">Сначала выберите</p>
+              <h2>Настройки чтения</h2>
+            </div>
+
+            <div class="field-block">
+              <span class="field-label">Язык текста</span>
+              <div id="translation-toggle" class="translation-toggle" aria-label="Выбор языка"></div>
+            </div>
+
+            <div class="field-grid">
+              <label class="field">
+                <span class="field-label">Кафизма</span>
+                <select id="kathisma-select"></select>
+              </label>
+            </div>
+
+            <div class="summary-card" id="today-summary"></div>
+          </section>
+        </div>
+      </header>
+
+      <main class="layout">
+        <aside class="sidebar">
+          <section class="side-card fade-up">
+            <div class="card-heading">
+              <p class="card-kicker">Навигация</p>
+              <h2>По чтению</h2>
+            </div>
+            <nav id="reading-nav" class="reading-nav" aria-label="Разделы чтения"></nav>
+          </section>
+
+          <section class="side-card fade-up">
+            <div class="card-heading">
+              <p class="card-kicker">Порядок</p>
+              <h2>Как читать</h2>
+            </div>
+            <ul class="plain-list">
+              <li>Начните с обычного начала перед чтением Псалтири.</li>
+              <li>После первой и второй славы читается молитва о живых.</li>
+              <li>После третьей славы читается молитва об усопших.</li>
+              <li>По окончании кафизмы читается заключительная молитва.</li>
+            </ul>
+          </section>
+
+          <section class="side-card fade-up">
+            <div class="card-heading">
+              <p class="card-kicker">Быстрый выбор</p>
+              <h2>Все кафизмы</h2>
+            </div>
+            <div id="kathisma-grid" class="kathisma-grid"></div>
+          </section>
+        </aside>
+
+        <section class="content-column">
+          <div id="reading-view" class="reading-view fade-up">
+            <div class="loading-state">
+              <p>Загружаю тексты Псалтири…</p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer fade-up">
+        <p>
+          Обе версии текста собраны локально на основе страниц Azbyka, чтобы чтение открывалось быстро и без
+          переключения по внешним ссылкам.
+        </p>
+      </footer>
+    </div>
+
+    <script src="./data.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
