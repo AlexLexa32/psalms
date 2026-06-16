@@ -328,6 +328,10 @@ function getFullAfterKathismaBlock(kathismaId) {
   return DATA.prayers.afterKathismaFull?.find((item) => item.kathismaId === kathismaId) ?? null;
 }
 
+function getTrisagionAfterKathismaLines() {
+  return DATA.prayers.commonBeginning.slice(3, 10);
+}
+
 function getGospelPreparationPrayer() {
   const gospelPrayers = DATA.prayers.gospelBeforeMatthew;
 
@@ -535,10 +539,15 @@ function renderAfterKathismaSection(kathismaId) {
         <div class="section-header">
           <p class="card-kicker">По окончании</p>
           <h2>Молитва после кафизмы</h2>
-          <p class="section-lead">Краткая версия оставляет только заключительную молитву, как и раньше.</p>
+          <p class="section-lead">После кафизмы читается Трисвятое по Отче наш, затем заключительная молитва.</p>
         </div>
         <div class="prayer-flow">
           <div class="prayer-block">
+            <h3>Трисвятое по Отче наш</h3>
+            <div class="prayer-text">${renderPrayerLines(getTrisagionAfterKathismaLines())}</div>
+          </div>
+          <div class="prayer-block">
+            <h3>Молитва после кафизмы</h3>
             <div class="prayer-text">${renderPrayerLines(DATA.prayers.afterKathisma)}</div>
           </div>
         </div>
@@ -557,6 +566,11 @@ function renderAfterKathismaSection(kathismaId) {
         </div>
         <div class="prayer-flow">
           <div class="prayer-block">
+            <h3>Трисвятое по Отче наш</h3>
+            <div class="prayer-text">${renderPrayerLines(getTrisagionAfterKathismaLines())}</div>
+          </div>
+          <div class="prayer-block">
+            <h3>Молитва после кафизмы</h3>
             <div class="prayer-text">${renderPrayerLines(DATA.prayers.afterKathisma)}</div>
           </div>
         </div>
@@ -570,11 +584,15 @@ function renderAfterKathismaSection(kathismaId) {
         <p class="card-kicker">По окончании</p>
         <h2>Полный порядок после кафизмы</h2>
         <p class="section-lead">
-          После тропарей и 40-кратного «Господи, помилуй» сначала идёт молитва по соглашению, а затем последняя
-          молитва этой кафизмы.
+          После кафизмы читается Трисвятое по Отче наш, затем тропари, 40-кратное «Господи, помилуй»,
+          молитва по соглашению и последняя молитва этой кафизмы.
         </p>
       </div>
       <div class="prayer-flow">
+        <div class="prayer-block">
+          <h3>Трисвятое по Отче наш</h3>
+          <div class="prayer-text">${renderPrayerLines(getTrisagionAfterKathismaLines())}</div>
+        </div>
         <div class="prayer-block">
           <h3>Тропари после кафизмы</h3>
           <div class="prayer-text">
