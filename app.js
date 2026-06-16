@@ -5,6 +5,8 @@ const STORAGE_KEYS = {
   kathisma: "psalter.kathisma"
 };
 
+const MOSCOW_TIMEZONE = "Europe/Moscow";
+
 const state = {
   translation: "churchSlavonic",
   kathismaId: 1
@@ -38,6 +40,43 @@ function createElement(tagName, className, textContent) {
   }
 
   return node;
+}
+
+function getDateStringForTimezone(timeZone) {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  });
+
+  const parts = formatter.formatToParts(new Date());
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function formatRussianDate(dateString) {
+  const [year, month, day] = dateString.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return new Intl.DateTimeFormat("ru-RU", {
+    timeZone: "UTC",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  }).format(date);
+}
+
+function getTroparionData() {
+  const dateString = getDateStringForTimezone(MOSCOW_TIMEZONE);
+  const url = `https://azbyka.ru/days/${dateString}#tropari`;
+
+  return {
+    dateString,
+    formattedDate: formatRussianDate(dateString),
+    url
+  };
 }
 
 function getKathismaList() {
@@ -136,7 +175,8 @@ function renderReadingNav() {
     { id: "segment-1", label: "Слава 1" },
     { id: "segment-2", label: "Слава 2" },
     { id: "segment-3", label: "Слава 3" },
-    { id: "after-kathisma", label: "По окончании" }
+    { id: "after-kathisma", label: "По окончании" },
+    { id: "troparia-day", label: "Тропари дня" }
   ];
 
   readingNav.innerHTML = "";
@@ -204,6 +244,40 @@ function renderPrayerCard(prayerType, segmentIndex) {
       <div class="names-label">${escapeHtml(prayer.namesLabel)}</div>
       <div class="name-cloud">${renderNameCloud(prayer.names)}</div>
     </article>
+  `;
+}
+
+function renderTroparionSection() {
+  const troparion = getTroparionData();
+
+  return `
+    <section class="reading-section troparion-section" id="troparia-day">
+      <div class="section-header">
+        <p class="card-kicker">На сегодня</p>
+        <h2>Тропари дня</h2>
+        <p class="section-lead">
+          Открывается раздел «Тропари» на ${escapeHtml(troparion.formattedDate)} по московскому времени.
+        </p>
+      </div>
+      <div class="troparion-actions">
+        <a class="ghost-link-button" href="${escapeHtml(troparion.url)}" target="_blank" rel="noreferrer">
+          Открыть отдельно
+        </a>
+      </div>
+      <div class="troparion-frame-shell">
+        <iframe
+          class="troparion-frame"
+          src="${escapeHtml(troparion.url)}"
+          title="Тропари дня из Азбуки веры"
+          loading="lazy"
+          referrerpolicy="no-referrer"
+        ></iframe>
+      </div>
+      <p class="troparion-source">
+        Источник:
+        <a href="${escapeHtml(troparion.url)}" target="_blank" rel="noreferrer">Азбука веры</a>
+      </p>
+    </section>
   `;
 }
 
@@ -286,6 +360,8 @@ function renderReading(kathismaNumber) {
         </div>
       </div>
     </section>
+
+    ${renderTroparionSection()}
   `;
 }
 
