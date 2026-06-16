@@ -329,7 +329,7 @@ function getFullAfterKathismaBlock(kathismaId) {
 }
 
 function getTrisagionAfterKathismaLines() {
-  return DATA.prayers.commonBeginning.slice(3, 10);
+  return DATA.prayers.commonBeginning.slice(3, 9);
 }
 
 function getGospelPreparationPrayer() {
