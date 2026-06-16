@@ -11,6 +11,37 @@ const outputFile = path.join(rootDir, "data.js");
 
 const AZBYKA_BASE = "https://azbyka.ru/biblia/";
 const execFileAsync = promisify(execFile);
+const MATTHEW_CHAPTER_COUNT = 28;
+const GOSPEL_CYCLE_START_DATE = "2026-06-16";
+const GOSPEL_CYCLE_START_ZACHALO = 4;
+const PSALM_HEADING_START_MARKERS = [
+  "в конец",
+  "псалом",
+  "песнь",
+  "молитва",
+  "разум",
+  "аллилу",
+  "о наследствующем",
+  "о точилех",
+  "о точилах",
+  "о осмом",
+  "о тайных",
+  "о заступлении",
+  "в воспоминание",
+  "идифуму",
+  "сынов кореевых",
+  "сынов кореовых",
+  "асафу",
+  "еману",
+  "ефаму",
+  "моисея",
+  "соломону",
+  "начальнику хора",
+  "плачевная песнь",
+  "при обновлении",
+  "раба господня"
+];
+const PSALM_HEADING_CONTINUATIONS = ["егда", "внегда", "яже", "еже", "жене", "сына", "при", "когда", "после", "о "];
 
 const people = [
   { id: "nataliya-vsehoroshonatash", name: "Наталии", handle: "@vsehoroshonatash", startKathisma: 1, group: "Основной круг" },
@@ -136,6 +167,17 @@ function normalizeWhitespace(value) {
   return value.replace(/\r/g, "").replace(/\n+/g, " ").replace(/\s+/g, " ").trim();
 }
 
+function normalizeMatchingText(value) {
+  return normalizeWhitespace(value)
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .replace(/ѣ/gi, "е")
+    .replace(/і/gi, "и")
+    .replace(/ѳ/gi, "ф")
+    .replace(/ѵ/gi, "и")
+    .toLowerCase();
+}
+
 function decodeHtml(value) {
   return value
     .replace(/&nbsp;/g, " ")
@@ -165,6 +207,16 @@ function sanitizeInlineHtml(value) {
     .trim();
 
   return normalized.replace(/\s+(<\/?em>)/g, "$1").replace(/(<\/?em>)\s+/g, "$1 ");
+}
+
+function looksLikePsalmHeadingStart(text) {
+  const normalized = normalizeMatchingText(text);
+  return PSALM_HEADING_START_MARKERS.some((marker) => normalized.startsWith(marker) || normalized.includes(` ${marker}`));
+}
+
+function looksLikePsalmHeadingContinuation(text) {
+  const normalized = normalizeMatchingText(text);
+  return PSALM_HEADING_CONTINUATIONS.some((marker) => normalized.startsWith(marker));
 }
 
 async function fetchWithRetry(url, { mode = "json", retries = 4, timeoutMs = 35000 } = {}) {
@@ -264,7 +316,7 @@ function parseAzbykaPsalm(html, number, langCode) {
 
   const verseMatches = [...html.matchAll(versePattern)];
   const verses = [];
-  let heading = "";
+  const headingParts = [];
 
   for (const match of verseMatches) {
     const verseNumber = Number(match[1]);
@@ -272,7 +324,17 @@ function parseAzbykaPsalm(html, number, langCode) {
     const verseText = stripTags(verseHtml);
 
     if (verseNumber === 0) {
-      heading = verseText;
+      headingParts.push(verseText);
+      continue;
+    }
+
+    if (verses.length === 0 && headingParts.length === 0 && looksLikePsalmHeadingStart(verseText)) {
+      headingParts.push(verseText);
+      continue;
+    }
+
+    if (verses.length === 0 && headingParts.length > 0 && looksLikePsalmHeadingContinuation(verseText)) {
+      headingParts.push(verseText);
       continue;
     }
 
@@ -289,7 +351,7 @@ function parseAzbykaPsalm(html, number, langCode) {
   return {
     number,
     title,
-    heading,
+    heading: headingParts.join(" ").trim(),
     verses
   };
 }
@@ -308,6 +370,115 @@ async function fetchAzbykaPsalms(langCode) {
   }
 
   return psalms;
+}
+
+function extractZachaloNumber(html) {
+  const match = decodeHtml(html).match(/Зач\.\s*(\d+)/i);
+  return match ? Number(match[1]) : null;
+}
+
+function cleanupMatthewVerseHtml(html) {
+  return cleanupAzbykaVerseHtml(html)
+    .replace(/\[?\s*<span class="zachala">[\s\S]*?<\/span>\]?\s*/gi, "")
+    .replace(/<span class="cuSnos"[\s\S]*?<\/span>/gi, "")
+    .trim();
+}
+
+function parseAzbykaMatthewChapter(html, chapterNumber, langCode) {
+  const versePattern = new RegExp(
+    `<div[\\s\\S]*?data-lang="${langCode}"[\\s\\S]*?data-chapter="${chapterNumber}"[\\s\\S]*?data-line="(\\d+)"[\\s\\S]*?data-verse="Mt\\.${chapterNumber}:(\\d+)"[\\s\\S]*?class="verse lang-${langCode}[^"]*"[^>]*>([\\s\\S]*?)<span class="icon-check checkbox"><\\/span>[\\s\\S]*?<\\/div>`,
+    "gi"
+  );
+
+  const verses = [];
+
+  for (const match of html.matchAll(versePattern)) {
+    const verseNumber = Number(match[2]);
+    const verseHtml = match[3];
+    const zachaloNumber = extractZachaloNumber(verseHtml);
+    const verseText = stripTags(cleanupMatthewVerseHtml(verseHtml));
+
+    verses.push({
+      chapter: chapterNumber,
+      number: verseNumber,
+      text: verseText,
+      zachaloNumber
+    });
+  }
+
+  if (verses.length === 0) {
+    throw new Error(`Не удалось распарсить Мф.${chapterNumber} для языка ${langCode}`);
+  }
+
+  return {
+    chapter: chapterNumber,
+    verses
+  };
+}
+
+async function fetchAzbykaMatthewChapters(langCode) {
+  const chapters = Array.from({ length: MATTHEW_CHAPTER_COUNT }, (_, index) => index + 1);
+
+  return mapWithConcurrency(chapters, 4, async (chapterNumber) => {
+    const html = await fetchTextWithCurl(`${AZBYKA_BASE}?Mt.${chapterNumber}&${langCode}`);
+    return parseAzbykaMatthewChapter(html, chapterNumber, langCode);
+  });
+}
+
+function buildMatthewReference(startVerse, endVerse) {
+  if (startVerse.chapter === endVerse.chapter) {
+    if (startVerse.number === endVerse.number) {
+      return `Мф. ${startVerse.chapter}:${startVerse.number}`;
+    }
+
+    return `Мф. ${startVerse.chapter}:${startVerse.number}-${endVerse.number}`;
+  }
+
+  return `Мф. ${startVerse.chapter}:${startVerse.number} — ${endVerse.chapter}:${endVerse.number}`;
+}
+
+function buildMatthewZachala(chapters) {
+  const orderedVerses = chapters.flatMap((chapter) => chapter.verses);
+  const zachala = [];
+  let current = null;
+
+  for (const verse of orderedVerses) {
+    if (verse.zachaloNumber !== null) {
+      if (current) {
+        zachala.push(current);
+      }
+
+      current = {
+        number: verse.zachaloNumber,
+        verses: []
+      };
+    }
+
+    if (!current) {
+      continue;
+    }
+
+    current.verses.push({
+      chapter: verse.chapter,
+      number: verse.number,
+      text: verse.text
+    });
+  }
+
+  if (current) {
+    zachala.push(current);
+  }
+
+  return zachala.map((zachalo) => {
+    const startVerse = zachalo.verses[0];
+    const endVerse = zachalo.verses[zachalo.verses.length - 1];
+
+    return {
+      number: zachalo.number,
+      reference: buildMatthewReference(startVerse, endVerse),
+      verses: zachalo.verses
+    };
+  });
 }
 
 function clonePsalmSegment(psalm, verseStart = null, verseEnd = null) {
@@ -364,6 +535,9 @@ async function buildData() {
   console.log("Скачиваю церковнославянский текст...");
   const churchSlavonicPsalms = await fetchAzbykaPsalms("cs");
 
+  console.log("Скачиваю зачала Евангелия от Матфея...");
+  const matthewSynodalChapters = await fetchAzbykaMatthewChapters("r");
+
   console.log("Собираю кафизмы...");
 
   return {
@@ -374,9 +548,16 @@ async function buildData() {
     ],
     sources: {
       synodal: "https://azbyka.ru/biblia/?Ps.1&r",
-      churchSlavonic: "https://azbyka.ru/biblia/?Ps.1&cs"
+      churchSlavonic: "https://azbyka.ru/biblia/?Ps.1&cs",
+      matthewSynodal: "https://azbyka.ru/biblia/?Mt.1&r"
     },
     prayers,
+    gospelMatthew: {
+      translationLabel: "Синодальный перевод",
+      cycleStartDate: GOSPEL_CYCLE_START_DATE,
+      cycleStartZachalo: GOSPEL_CYCLE_START_ZACHALO,
+      zachala: buildMatthewZachala(matthewSynodalChapters)
+    },
     kathismas: {
       churchSlavonic: buildKathismas(churchSlavonicPsalms),
       synodal: buildKathismas(synodalPsalms)

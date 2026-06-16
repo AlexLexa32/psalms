@@ -1,23 +1,83 @@
 const DATA = window.PSALTER_APP_DATA;
 
 const STORAGE_KEYS = {
-  translation: "psalter.translation",
-  kathisma: "psalter.kathisma"
+  translation: "psalter.translation.v2",
+  kathisma: "psalter.kathisma",
+  prayerVersion: "psalter.prayerVersion.v2"
 };
 
 const MOSCOW_TIMEZONE = "Europe/Moscow";
+const PSALM_HEADING_START_MARKERS = [
+  "в конец",
+  "псалом",
+  "песнь",
+  "молитва",
+  "разум",
+  "аллилу",
+  "о наследствующем",
+  "о точилех",
+  "о точилах",
+  "о осмом",
+  "о тайных",
+  "о заступлении",
+  "в воспоминание",
+  "идифуму",
+  "сынов кореевых",
+  "сынов кореовых",
+  "асафу",
+  "еману",
+  "ефаму",
+  "моисея",
+  "соломону",
+  "начальнику хора",
+  "плачевная песнь",
+  "при обновлении",
+  "раба господня"
+];
+const PSALM_HEADING_CONTINUATIONS = ["егда", "внегда", "яже", "еже", "жене", "сына", "при", "когда", "после", "о "];
 
 const state = {
   translation: "churchSlavonic",
-  kathismaId: 1
+  kathismaId: 1,
+  prayerVersion: "full"
 };
 
 const translationToggle = document.getElementById("translation-toggle");
+const prayerVersionToggle = document.getElementById("prayer-version-toggle");
 const kathismaSelect = document.getElementById("kathisma-select");
 const kathismaGrid = document.getElementById("kathisma-grid");
 const summaryView = document.getElementById("today-summary");
 const readingView = document.getElementById("reading-view");
 const readingNav = document.getElementById("reading-nav");
+
+const PRAYER_VERSION_OPTIONS = [
+  {
+    id: "short",
+    label: "Краткая"
+  },
+  {
+    id: "full",
+    label: "Полная"
+  }
+];
+
+const FULL_GOSPEL_PRAYER = {
+  churchSlavonic:
+    "Возсия́й в сердца́х на́ших, Человеколю́бче Го́споди, Твоего́ богове́дения нетле́нный све́т, и мы́сленная на́ша отве́рзи о́чи во ева́нгельских Твои́х пропове́даний разуме́ние, вложи́ в на́с и блаже́нных Твои́х за́поведей стра́х, да плотски́я по́хоти вся́ попра́вше, духо́вное жи́тельство про́йдем, вся́ я́же ко благоугожде́нию Твоему́ и му́дрствующе и де́юще. Ты́ бо еси́ просвеще́ние ду́ш и теле́с на́ших, Христе́ Бо́же, и Тебе́ сла́ву возсыла́ем, со Безнача́льным Твои́м Отце́м и Всесвяты́м, и Благи́м, и Животворя́щим Твои́м Ду́хом, ны́не и при́сно, и во ве́ки веко́в, ами́нь.",
+  synodal:
+    "Зажги в сердцах наших, человеколюбивый Господи, Твоего Богопознания нетленный свет и открой очи ума нашего для уразумения евангельской Твоей проповеди! Вложи в нас и страх пред блаженными Твоими заповедями, дабы мы, все плотские влечения поправ, проводили духовную жизнь, о всём, что ко благоугождению Тебе, мысля и то совершая. Ибо Ты – просвещение душ и тел наших, Христе Боже, и Тебе славу возсылаем, со Безначальным Твоим Отцом и Всесвятым, и Благим, и Животворящим Твоим Духом ныне, и всегда, и во веки веков. Аминь."
+};
+
+const SHORT_GOSPEL_PRAYER =
+  "Го́споди Иису́се Христе́! Отве́рзи мои́ о́чи серде́чные, что́бы услышать мне́ сло́во Твое́ и уразуметь его́ и исполнить во́лю Твою́.";
+
+const GOSPEL_AFTER_PRAYER =
+  "Спаси, Господи и помилуй рабов Твоих (имена) словами Божественного Евангелия, читаемыми во спасение. Попали, Господи, терние всех наших согрешений, и да вселится в нас благодать Твоя очищающая, освящающая всего человека, во имя Отца и Сына и Святого Духа. Аминь.";
+
+const SHORT_BEFORE_KATHISMA_ENDING = [
+  "Го́споди, поми́луй. (12 раз.)",
+  "Слава Отцу, и Сыну, и Святому Духу, и ныне, и присно, и во веки веков. Аминь."
+];
 
 function escapeHtml(value) {
   return String(value)
@@ -40,6 +100,77 @@ function createElement(tagName, className, textContent) {
   }
 
   return node;
+}
+
+function normalizeMatchingText(value) {
+  return String(value)
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .replace(/ѣ/gi, "е")
+    .replace(/і/gi, "и")
+    .replace(/ѳ/gi, "ф")
+    .replace(/ѵ/gi, "и")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function looksLikePsalmHeadingStart(text) {
+  const normalized = normalizeMatchingText(text);
+  return PSALM_HEADING_START_MARKERS.some((marker) => normalized.startsWith(marker) || normalized.includes(` ${marker}`));
+}
+
+function looksLikePsalmHeadingContinuation(text) {
+  const normalized = normalizeMatchingText(text);
+  return PSALM_HEADING_CONTINUATIONS.some((marker) => normalized.startsWith(marker));
+}
+
+function normalizePsalmHeading(psalm) {
+  if (!psalm || !Array.isArray(psalm.verses) || psalm.verses.length === 0) {
+    return;
+  }
+
+  const headingParts = [];
+
+  if (psalm.heading) {
+    headingParts.push(psalm.heading);
+  }
+
+  while (psalm.verses.length > 0) {
+    const firstVerse = psalm.verses[0];
+
+    if (headingParts.length === 0 && looksLikePsalmHeadingStart(firstVerse.text)) {
+      headingParts.push(firstVerse.text);
+      psalm.verses.shift();
+      continue;
+    }
+
+    if (headingParts.length > 0 && looksLikePsalmHeadingContinuation(firstVerse.text)) {
+      headingParts.push(firstVerse.text);
+      psalm.verses.shift();
+      continue;
+    }
+
+    break;
+  }
+
+  psalm.heading = headingParts.join(" ").trim();
+}
+
+function normalizeLoadedData() {
+  if (!DATA?.kathismas) {
+    return;
+  }
+
+  for (const translationId of Object.keys(DATA.kathismas)) {
+    for (const kathisma of DATA.kathismas[translationId]) {
+      for (const segment of kathisma.segments) {
+        for (const psalm of segment.psalms) {
+          normalizePsalmHeading(psalm);
+        }
+      }
+    }
+  }
 }
 
 function getDateStringForTimezone(timeZone) {
@@ -76,6 +207,27 @@ function getTroparionData() {
     dateString,
     formattedDate: formatRussianDate(dateString),
     url
+  };
+}
+
+function getMatthewZachaloForToday() {
+  const gospel = DATA.gospelMatthew;
+
+  if (!gospel?.zachala?.length) {
+    return null;
+  }
+
+  const currentDateString = getDateStringForTimezone(MOSCOW_TIMEZONE);
+  const startDate = new Date(`${gospel.cycleStartDate}T00:00:00Z`);
+  const currentDate = new Date(`${currentDateString}T00:00:00Z`);
+  const diffDays = Math.floor((currentDate - startDate) / 86400000);
+  const startIndex = gospel.zachala.findIndex((item) => item.number === gospel.cycleStartZachalo);
+  const safeStartIndex = startIndex >= 0 ? startIndex : 0;
+  const cycleIndex = ((safeStartIndex + diffDays) % gospel.zachala.length + gospel.zachala.length) % gospel.zachala.length;
+
+  return {
+    ...gospel.zachala[cycleIndex],
+    formattedDate: formatRussianDate(currentDateString)
   };
 }
 
@@ -120,6 +272,76 @@ function buildTranslationToggle() {
   }
 }
 
+function buildPrayerVersionToggle() {
+  prayerVersionToggle.innerHTML = "";
+
+  for (const option of PRAYER_VERSION_OPTIONS) {
+    const button = createElement("button", "translation-button");
+    button.type = "button";
+    button.dataset.prayerVersion = option.id;
+
+    const title = createElement("strong", "", option.label);
+    button.append(title);
+
+    if (option.id === state.prayerVersion) {
+      button.classList.add("active");
+    }
+
+    button.addEventListener("click", () => {
+      state.prayerVersion = option.id;
+      localStorage.setItem(STORAGE_KEYS.prayerVersion, state.prayerVersion);
+      render();
+    });
+
+    prayerVersionToggle.append(button);
+  }
+}
+
+function getCommonBeginningLines() {
+  const beforeKathisma = DATA.prayers.beforeKathisma;
+  const shortTroparion = beforeKathisma.shortTroparion.replace(/^Сла́ва Отцу́ и Сы́ну и Свято́му Ду́ху\.\s*/u, "");
+
+  if (state.prayerVersion === "short") {
+    return [
+      ...DATA.prayers.commonBeginning.slice(0, 10),
+      shortTroparion,
+      ...SHORT_BEFORE_KATHISMA_ENDING,
+      ...DATA.prayers.commonBeginning.slice(10)
+    ];
+  }
+
+  return [
+    ...DATA.prayers.commonBeginning.slice(0, 9),
+    beforeKathisma.full.intro,
+    ...beforeKathisma.full.troparia,
+    beforeKathisma.full.lordHaveMercy,
+    beforeKathisma.full.prayer,
+    ...DATA.prayers.commonBeginning.slice(10)
+  ];
+}
+
+function getAfterKathismaModeLabel() {
+  return state.prayerVersion === "full" ? "Полная версия молитв" : "Краткая версия молитв";
+}
+
+function getFullAfterKathismaBlock(kathismaId) {
+  return DATA.prayers.afterKathismaFull?.find((item) => item.kathismaId === kathismaId) ?? null;
+}
+
+function getGospelPreparationPrayer() {
+  const gospelPrayers = DATA.prayers.gospelBeforeMatthew;
+
+  if (state.prayerVersion === "short") {
+    return gospelPrayers?.shortPrayer || SHORT_GOSPEL_PRAYER;
+  }
+
+  if (gospelPrayers?.fullPrayer) {
+    return state.translation === "synodal" ? gospelPrayers.fullPrayer.synodal : gospelPrayers.fullPrayer.churchSlavonic;
+  }
+
+  return state.translation === "synodal" ? FULL_GOSPEL_PRAYER.synodal : FULL_GOSPEL_PRAYER.churchSlavonic;
+}
+
 function populateKathismaSelect() {
   kathismaSelect.innerHTML = "";
 
@@ -154,6 +376,7 @@ function renderKathismaGrid() {
 
 function renderSummary(kathismaNumber) {
   const translationLabel = DATA.translations.find((translation) => translation.id === state.translation)?.label ?? "";
+  const prayerModeLabel = getAfterKathismaModeLabel();
 
   summaryView.innerHTML = `
     <div class="summary-grid">
@@ -165,6 +388,7 @@ function renderSummary(kathismaNumber) {
         <span>Сейчас открыта</span>
         <strong>${kathismaNumber}-я кафизма</strong>
       </div>
+      <p class="summary-meta">${escapeHtml(prayerModeLabel)}</p>
     </div>
   `;
 }
@@ -174,6 +398,7 @@ function renderReadingNav() {
     { id: "common-beginning", label: "Начало" },
     { id: "segment-1", label: "Слава 1" },
     { id: "segment-2", label: "Слава 2" },
+    { id: "matthew-gospel", label: "Матфей" },
     { id: "segment-3", label: "Слава 3" },
     { id: "after-kathisma", label: "По окончании" },
     { id: "troparia-day", label: "Тропари дня" }
@@ -247,6 +472,130 @@ function renderPrayerCard(prayerType, segmentIndex) {
   `;
 }
 
+function renderGospelAfterSecondSlava() {
+  const zachalo = getMatthewZachaloForToday();
+
+  if (!zachalo) {
+    return "";
+  }
+
+  const verses = zachalo.verses
+    .map(
+      (verse) => `
+        <div class="gospel-verse">
+          <div class="gospel-verse-number">${escapeHtml(`${verse.chapter}:${verse.number}`)}</div>
+          <div class="gospel-verse-text">${escapeHtml(verse.text)}</div>
+        </div>
+      `
+    )
+    .join("");
+
+  const gospelTroparion =
+    DATA.prayers.gospelBeforeMatthew?.troparion ||
+    "Апо́столе святы́й Матфе́е, моли́ Ми́лостиваго Бо́га, да прегреше́ний оставле́ние пода́ст душа́м на́шим.";
+  const preparationLines =
+    state.prayerVersion === "full" ? [gospelTroparion, getGospelPreparationPrayer()] : [getGospelPreparationPrayer()];
+  const afterGospelBlock =
+    state.prayerVersion === "full"
+      ? `
+        <div class="prayer-block">
+          <h3>Молитва после Евангелия</h3>
+          <div class="prayer-text">${renderPrayerText(DATA.prayers.gospelBeforeMatthew?.afterPrayer || GOSPEL_AFTER_PRAYER)}</div>
+          <div class="names-label">Имена после Евангелия</div>
+          <div class="name-cloud">${renderNameCloud(DATA.prayers.livingPrayer.names)}</div>
+        </div>
+      `
+      : "";
+
+  return `
+    <article class="prayer-card gospel-card" id="matthew-gospel">
+      <h3>Евангелие после 2-й славы</h3>
+      <div class="gospel-meta">
+        <span class="gospel-badge">${escapeHtml(`${zachalo.number}-е зачало`)}</span>
+        <span class="gospel-reference">${escapeHtml(zachalo.reference)}</span>
+      </div>
+      <p class="gospel-note">
+        На ${escapeHtml(zachalo.formattedDate)} читается ${escapeHtml(`${zachalo.number}-е зачало`)}. Этот блок всегда
+        приводится по синодальному переводу, независимо от выбранной версии Псалтири.
+      </p>
+      <div class="prayer-block">
+        <h3>Перед Евангелием</h3>
+        <div class="prayer-text">${renderPrayerLines(preparationLines)}</div>
+      </div>
+      <div class="gospel-text">${verses}</div>
+      ${afterGospelBlock}
+    </article>
+  `;
+}
+
+function renderAfterKathismaSection(kathismaId) {
+  if (state.prayerVersion === "short") {
+    return `
+      <section class="reading-section" id="after-kathisma">
+        <div class="section-header">
+          <p class="card-kicker">По окончании</p>
+          <h2>Молитва после кафизмы</h2>
+          <p class="section-lead">Краткая версия оставляет только заключительную молитву, как и раньше.</p>
+        </div>
+        <div class="prayer-flow">
+          <div class="prayer-block">
+            <div class="prayer-text">${renderPrayerLines(DATA.prayers.afterKathisma)}</div>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  const fullBlock = getFullAfterKathismaBlock(kathismaId);
+
+  if (!fullBlock) {
+    return `
+      <section class="reading-section" id="after-kathisma">
+        <div class="section-header">
+          <p class="card-kicker">По окончании</p>
+          <h2>Молитва после кафизмы</h2>
+        </div>
+        <div class="prayer-flow">
+          <div class="prayer-block">
+            <div class="prayer-text">${renderPrayerLines(DATA.prayers.afterKathisma)}</div>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  return `
+    <section class="reading-section" id="after-kathisma">
+      <div class="section-header">
+        <p class="card-kicker">По окончании</p>
+        <h2>Полный порядок после кафизмы</h2>
+        <p class="section-lead">
+          После тропарей и 40-кратного «Господи, помилуй» сначала идёт молитва по соглашению, а затем последняя
+          молитва этой кафизмы.
+        </p>
+      </div>
+      <div class="prayer-flow">
+        <div class="prayer-block">
+          <h3>Тропари после кафизмы</h3>
+          <div class="prayer-text">
+            <p><strong>${escapeHtml(fullBlock.intro)}</strong></p>
+            ${renderPrayerLines(fullBlock.troparia)}
+            <p>${escapeHtml(fullBlock.lordHaveMercy)}</p>
+          </div>
+        </div>
+        <div class="prayer-block">
+          <h3>Молитва по соглашению</h3>
+          <div class="prayer-text">${renderPrayerLines(DATA.prayers.afterKathisma)}</div>
+        </div>
+        <div class="prayer-block">
+          <h3>Последняя молитва после кафизмы</h3>
+          <div class="prayer-text">${renderPrayerText(fullBlock.prayer)}</div>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
 function renderTroparionSection() {
   const troparion = getTroparionData();
 
@@ -284,6 +633,7 @@ function renderTroparionSection() {
 function renderReading(kathismaNumber) {
   const kathisma = getKathismaData(state.translation, kathismaNumber);
   const translationLabel = DATA.translations.find((translation) => translation.id === state.translation)?.label ?? "";
+  const prayerModeLabel = getAfterKathismaModeLabel();
   const uniquePsalmCount = new Set(kathisma.segments.flatMap((segment) => segment.psalms.map((psalm) => psalm.number))).size;
 
   let psalmWord = "псалмов";
@@ -309,6 +659,7 @@ function renderReading(kathismaNumber) {
           </div>
           ${segment.psalms.map(renderPsalmCard).join("")}
           ${renderPrayerCard(segment.prayerType, index + 1)}
+          ${index === 1 ? renderGospelAfterSecondSlava() : ""}
         </section>
       `
     )
@@ -323,6 +674,7 @@ function renderReading(kathismaNumber) {
           Выбран ${escapeHtml(translationLabel)}. Здесь уже собраны обычное начало, сама кафизма, славы и молитвы с
           именами о здравии и об упокоении.
         </p>
+        <p class="section-lead">${escapeHtml(prayerModeLabel)}.</p>
         <p class="section-lead">
           В этой кафизме ${uniquePsalmCount} ${psalmWord}.
         </p>
@@ -336,7 +688,7 @@ function renderReading(kathismaNumber) {
       </div>
       <div class="prayer-flow">
         <div class="prayer-block">
-          <div class="prayer-text">${renderPrayerLines(DATA.prayers.commonBeginning)}</div>
+          <div class="prayer-text">${renderPrayerLines(getCommonBeginningLines())}</div>
         </div>
       </div>
     </section>
@@ -349,17 +701,7 @@ function renderReading(kathismaNumber) {
       <div class="reading-stack">${segmentsHtml}</div>
     </section>
 
-    <section class="reading-section" id="after-kathisma">
-      <div class="section-header">
-        <p class="card-kicker">По окончании</p>
-        <h2>Молитва после кафизмы</h2>
-      </div>
-      <div class="prayer-flow">
-        <div class="prayer-block">
-          <div class="prayer-text">${renderPrayerLines(DATA.prayers.afterKathisma)}</div>
-        </div>
-      </div>
-    </section>
+    ${renderAfterKathismaSection(kathismaNumber)}
 
     ${renderTroparionSection()}
   `;
@@ -367,6 +709,7 @@ function renderReading(kathismaNumber) {
 
 function render() {
   buildTranslationToggle();
+  buildPrayerVersionToggle();
   renderKathismaGrid();
   renderSummary(state.kathismaId);
   renderReadingNav();
@@ -384,9 +727,11 @@ function initialize() {
     return;
   }
 
+  normalizeLoadedData();
   populateKathismaSelect();
 
   state.translation = localStorage.getItem(STORAGE_KEYS.translation) || DATA.translations[0].id;
+  state.prayerVersion = localStorage.getItem(STORAGE_KEYS.prayerVersion) || "full";
 
   const savedKathisma = Number(localStorage.getItem(STORAGE_KEYS.kathisma) || 1);
   state.kathismaId = Number.isFinite(savedKathisma) && savedKathisma >= 1 && savedKathisma <= 20 ? savedKathisma : 1;

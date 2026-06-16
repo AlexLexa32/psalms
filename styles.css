@@ -650,6 +650,67 @@ input[type="date"]:focus {
   font-size: 0.92rem;
 }
 
+.gospel-card {
+  border-color: rgba(125, 43, 33, 0.16);
+  background:
+    linear-gradient(180deg, rgba(255, 249, 239, 0.98), rgba(247, 236, 219, 0.92)),
+    linear-gradient(180deg, rgba(195, 149, 71, 0.08), transparent);
+}
+
+.gospel-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin: 12px 0 14px;
+}
+
+.gospel-badge,
+.gospel-reference {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 0.92rem;
+}
+
+.gospel-badge {
+  color: #fff7ef;
+  background: linear-gradient(135deg, rgba(125, 43, 33, 0.94), rgba(184, 109, 59, 0.94));
+}
+
+.gospel-reference {
+  color: var(--accent-strong);
+  background: rgba(125, 43, 33, 0.08);
+}
+
+.gospel-note {
+  margin: 0 0 16px;
+  color: var(--text-soft);
+  line-height: 1.7;
+}
+
+.gospel-text {
+  display: grid;
+  gap: 12px;
+}
+
+.gospel-verse {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.gospel-verse-number {
+  color: var(--accent-muted);
+  font-size: 0.92rem;
+}
+
+.gospel-verse-text {
+  line-height: 1.85;
+}
+
 .troparion-section {
   overflow: hidden;
 }
@@ -769,6 +830,11 @@ input[type="date"]:focus {
 
   .verse {
     grid-template-columns: 28px minmax(0, 1fr);
+  }
+
+  .gospel-verse {
+    grid-template-columns: 1fr;
+    gap: 4px;
   }
 
   .troparion-frame {
