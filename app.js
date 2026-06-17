@@ -543,13 +543,9 @@ function renderAfterKathismaSection(kathismaId) {
         <div class="section-header">
           <p class="card-kicker">По окончании</p>
           <h2>Молитва после кафизмы</h2>
-          <p class="section-lead">После кафизмы читается Трисвятое по Отче наш, затем заключительная молитва.</p>
+          <p class="section-lead">В краткой версии после кафизмы остаётся только заключительная молитва.</p>
         </div>
         <div class="prayer-flow">
-          <div class="prayer-block">
-            <h3>Трисвятое по Отче наш</h3>
-            <div class="prayer-text">${renderPrayerLines(getTrisagionAfterKathismaLines())}</div>
-          </div>
           <div class="prayer-block">
             <h3>Молитва после кафизмы</h3>
             <div class="prayer-text">${renderPrayerLines(DATA.prayers.afterKathisma)}</div>
