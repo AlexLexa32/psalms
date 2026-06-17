@@ -715,6 +715,36 @@ input[type="date"]:focus {
   overflow: hidden;
 }
 
+.weekday-hymns {
+  display: grid;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.weekday-hymns-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.weekday-hymns-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.weekday-hymn-block {
+  display: grid;
+  gap: 16px;
+}
+
+.weekday-hymn-piece {
+  display: grid;
+  gap: 10px;
+}
+
+.weekday-hymn-piece .names-label {
+  margin-top: 0;
+}
+
 .troparion-actions {
   margin-top: 18px;
 }
