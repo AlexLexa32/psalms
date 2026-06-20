@@ -3,27 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Псалтирь по кругу</title>
+    <title>Псалтирь "Воскресенье"</title>
     <meta
       name="description"
-      content="Удобное чтение Псалтири по кафизмам с прямым выбором кафизмы и текста на церковнославянском или в синодальном переводе."
+      content="Удобное чтение Псалтири по кафизмам с прямым выбором кафизмы, параллельным режимом ЦСЯ и синодального текста и молитвами в одном потоке."
     />
-    <link rel="icon" type="image/jpeg" href="./favicon-fish.jpg" />
+    <link rel="icon" type="image/png" href="./site-logo.png" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <div class="page-shell">
       <header class="hero fade-up">
         <div class="hero-copy">
-          <p class="eyebrow">Псалтирь по кругу</p>
+          <div class="brand-row">
+            <img class="brand-logo" src="./site-logo.png" alt='Логотип Псалтирь "Воскресенье"' />
+            <p class="eyebrow">Псалтирь "Воскресенье"</p>
+          </div>
           <h1>Красивое и спокойное чтение нужной кафизмы</h1>
           <p class="hero-text">
-            Выберите язык и нужную кафизму. Сайт соберёт всё в один поток: обычное начало, псалмы, славы, молитвы о
-            живых и усопших, а затем молитву по окончании.
+            Выберите режим текста и нужную кафизму. Сайт соберёт всё в один поток: обычное начало, псалмы, славы,
+            молитвы о живых и усопших, а затем молитву по окончании.
           </p>
           <div class="hero-notes">
             <span class="note-chip">Прямой выбор кафизмы</span>
             <span class="note-chip">ЦСЯ в гражданском шрифте</span>
+            <span class="note-chip">Параллельный режим</span>
             <span class="note-chip">1 и 2 слава о живых</span>
             <span class="note-chip">3 слава об усопших</span>
           </div>
@@ -87,6 +91,29 @@
             </div>
             <div id="kathisma-grid" class="kathisma-grid"></div>
           </section>
+
+          <section class="side-card fade-up">
+            <div class="card-heading">
+              <p class="card-kicker">Инструменты</p>
+              <h2>Шрифт и копирование</h2>
+            </div>
+            <div class="tool-stack">
+              <div class="font-stepper">
+                <button id="font-decrease-button" class="ghost-action-button" type="button" aria-label="Уменьшить шрифт">
+                  A-
+                </button>
+                <div id="font-size-value" class="font-size-value" aria-live="polite">100%</div>
+                <button id="font-increase-button" class="ghost-action-button" type="button" aria-label="Увеличить шрифт">
+                  A+
+                </button>
+              </div>
+              <button id="font-reset-button" class="ghost-action-button" type="button">Сбросить размер</button>
+              <button id="copy-selection-button" class="ghost-action-button" type="button" disabled>
+                Копировать выделенное
+              </button>
+              <p id="selection-status" class="tool-note">Выдели нужный отрывок в тексте, затем нажми кнопку.</p>
+            </div>
+          </section>
         </aside>
 
         <section class="content-column">
@@ -100,6 +127,7 @@
 
     </div>
 
+    <script src="./names.js"></script>
     <script src="./data.js"></script>
     <script src="./app.js"></script>
   </body>

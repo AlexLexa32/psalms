@@ -3,7 +3,8 @@ const DATA = window.PSALTER_APP_DATA;
 const STORAGE_KEYS = {
   translation: "psalter.translation.v2",
   kathisma: "psalter.kathisma",
-  prayerVersion: "psalter.prayerVersion.v2"
+  prayerVersion: "psalter.prayerVersion.v2",
+  fontScale: "psalter.fontScale.v1"
 };
 
 const MOSCOW_TIMEZONE = "Europe/Moscow";
@@ -35,11 +36,53 @@ const PSALM_HEADING_START_MARKERS = [
   "раба господня"
 ];
 const PSALM_HEADING_CONTINUATIONS = ["егда", "внегда", "яже", "еже", "жене", "сына", "при", "когда", "после", "о "];
+const SYNODAL_HEADING_MARKERS = [
+  "[",
+  "псалом",
+  "песнь восхождения",
+  "начальнику хора",
+  "учение",
+  "молитва",
+  "хвала",
+  "аллилу",
+  "давида",
+  "соломона",
+  "асафа",
+  "сынов кореевых",
+  "сынов кореовых",
+  "аггея",
+  "захарии",
+  "иеремии",
+  "иезекииля",
+  "моисея"
+];
+const SYNODAL_COMMENTARY_MARKERS = [
+  "содержание псалма",
+  "псалом представляет",
+  "псалмопевец",
+  "пораженный",
+  "при возвращении",
+  "жизнь в единении",
+  "надеющийся",
+  "ходящий",
+  "много теснили",
+  "если бы не господь",
+  "без бога",
+  "господи, ты знаешь",
+  "во время бедствий",
+  "когда я взывал",
+  "я постоянно обращаюсь",
+  "я возрадовался",
+  "только к тебе",
+  "при реках вавилона"
+];
 
 const state = {
   translation: "churchSlavonic",
   kathismaId: 1,
-  prayerVersion: "full"
+  prayerVersion: "full",
+  fontScale: 1,
+  selectedText: ""
 };
 
 const translationToggle = document.getElementById("translation-toggle");
@@ -49,6 +92,12 @@ const kathismaGrid = document.getElementById("kathisma-grid");
 const summaryView = document.getElementById("today-summary");
 const readingView = document.getElementById("reading-view");
 const readingNav = document.getElementById("reading-nav");
+const fontDecreaseButton = document.getElementById("font-decrease-button");
+const fontIncreaseButton = document.getElementById("font-increase-button");
+const fontResetButton = document.getElementById("font-reset-button");
+const fontSizeValue = document.getElementById("font-size-value");
+const copySelectionButton = document.getElementById("copy-selection-button");
+const selectionStatus = document.getElementById("selection-status");
 
 const PRAYER_VERSION_OPTIONS = [
   {
@@ -60,6 +109,26 @@ const PRAYER_VERSION_OPTIONS = [
     label: "Полная"
   }
 ];
+const TRANSLATION_OPTIONS = [
+  {
+    id: "churchSlavonic",
+    label: "Церковнославянский",
+    description: "Церковнославянский текст, показанный удобным гражданским шрифтом."
+  },
+  {
+    id: "synodal",
+    label: "Синодальный",
+    description: "Современный синодальный текст с привычной русской подачей."
+  },
+  {
+    id: "parallel",
+    label: "Параллельно",
+    description: "ЦСЯ и синодальный перевод рядом, в двух столбцах."
+  }
+];
+const FONT_SCALE_MIN = 0.85;
+const FONT_SCALE_MAX = 1.35;
+const FONT_SCALE_STEP = 0.05;
 
 const FULL_GOSPEL_PRAYER = {
   churchSlavonic:
@@ -78,13 +147,12 @@ const SHORT_BEFORE_KATHISMA_ENDING = [
   "Го́споди, поми́луй. (12 раз.)",
   "Слава Отцу, и Сыну, и Святому Духу, и ныне, и присно, и во веки веков. Аминь."
 ];
-
 const WEEKDAY_HYMNS = {
   0: {
-    title: "Воскресенье"
+    title: "Воскресные песнопения"
   },
   1: {
-    title: "Понедельник",
+    title: "Песнопения понедельника",
     sections: [
       {
         label: "Небесным чинам бесплотным",
@@ -104,7 +172,7 @@ const WEEKDAY_HYMNS = {
     ]
   },
   2: {
-    title: "Вторник",
+    title: "Песнопения вторника",
     sections: [
       {
         label: "Святому Иоанну Предтече",
@@ -124,7 +192,7 @@ const WEEKDAY_HYMNS = {
     ]
   },
   3: {
-    title: "Среда",
+    title: "Песнопения среды",
     sections: [
       {
         label: "Святому Кресту",
@@ -132,19 +200,19 @@ const WEEKDAY_HYMNS = {
           churchSlavonic:
             "Спаси́, Го́споди, лю́ди Твоя́/ и благослови́ достоя́ние Твое́,/ побе́ды на сопроти́вныя да́руя// и Твое́ сохраня́я Кресто́м Твои́м жи́тельство.",
           synodal:
-            "Спаси, Господи, людей Твоих и благослови все, что принадлежит Тебе. Даруй победы над врагами, и сохрани силою Креста Твоего тех, среди которых пребываешь Ты."
+            "Спаси, Господи, людей Твоих и благослови все, что принадлежит Тебе. Даруй победы над врагами и сохрани силою Креста Твоего тех, среди которых пребываешь Ты."
         },
         kontakion: {
           churchSlavonic:
             "Вознесы́йся на Крест во́лею,/ тезоимени́тому Твоему́ но́вому жи́тельству,/ щедро́ты Твоя́ да́руй, Христе́ Бо́же,/ возвесели́ нас си́лою Твое́ю,/ побе́ды дая́ нам на сопоста́ты,/ посо́бие иму́щим Твое́ ору́жие ми́ра,// непобеди́мую побе́ду.",
           synodal:
-            "Вознесенный на Крест добровольно, соименному Тебе новому народу милости Твои даруй, Христе Боже; возвесели силою Твоею верных людей Твоих, подавая им победы над врагами, – да имеют они помощь от Тебя, оружие мира, непобедимый знак победы."
+            "Вознесенный на Крест добровольно, соименному Тебе новому народу милости Твои даруй, Христе Боже; возвесели силою Твоею верных людей Твоих, подавая им победы над врагами, да имеют они помощь от Тебя, оружие мира, непобедимый знак победы."
         }
       }
     ]
   },
   4: {
-    title: "Четверг",
+    title: "Песнопения четверга",
     sections: [
       {
         label: "Святым апостолам",
@@ -165,19 +233,19 @@ const WEEKDAY_HYMNS = {
           churchSlavonic:
             "Пра́вило ве́ры и о́браз кро́тости,/ воздержа́ния учи́теля/ яви́ тя ста́ду твоему́/ Я́же веще́й И́стина./ Сего́ ра́ди стяжа́л еси́ смире́нием высо́кая,/ нището́ю бога́тая,/ о́тче священнонача́льниче Нико́лае,/ моли́ Христа́ Бо́га,// спасти́ся душа́м на́шим.",
           synodal:
-            "Правилом веры и образом кротости, воздержания учителем явила тебя стаду твоему непреложная Истина. Потому ты приобрел смирением – высокое, нищетою – богатство. Отче, святитель Николай, моли Христа Бога о спасении душ наших."
+            "Правилом веры и образом кротости, воздержания учителем явила тебя стаду твоему непреложная Истина. Потому ты приобрел смирением высокое, нищетою богатство. Отче, святитель Николай, моли Христа Бога о спасении душ наших."
         },
         kontakion: {
           churchSlavonic:
             "В Ми́рех, свя́те, священноде́йствитель показа́лся еси́,/ Христо́во бо, преподо́бне, Ева́нгелие испо́лнив,/ положи́л еси́ ду́шу твою́ о лю́дех твои́х/ и спасл еси́ непови́нныя от сме́рти./ Сего́ ра́ди освяти́лся еси́,// я́ко вели́кий таи́нник Бо́жия благода́ти.",
           synodal:
-            "В Мирах ты, святой, явился совершителем священнодействий, ибо Христово Евангелие исполнив, положил ты, преподобный, душу свою за людей твоих и неповинных спас от смерти; потому был ты освящен, как великий служитель таинств Божией благодати."
+            "В Мирах ты, святой, явился совершителем священнодействий, ибо Христово Евангелие исполнив, положил ты, преподобный, душу свою за людей твоих и неповинных спас от смерти; потому был ты освящен как великий служитель таинств Божией благодати."
         }
       }
     ]
   },
   5: {
-    title: "Пятница",
+    title: "Песнопения пятницы",
     sections: [
       {
         label: "Святому Кресту",
@@ -185,19 +253,19 @@ const WEEKDAY_HYMNS = {
           churchSlavonic:
             "Спаси́, Го́споди, лю́ди Твоя́/ и благослови́ достоя́ние Твое́,/ побе́ды на сопроти́вныя да́руя// и Твое́ сохраня́я Кресто́м Твои́м жи́тельство.",
           synodal:
-            "Спаси, Господи, людей Твоих и благослови все, что принадлежит Тебе. Даруй победы над врагами, и сохрани силою Креста Твоего тех, среди которых пребываешь Ты."
+            "Спаси, Господи, людей Твоих и благослови все, что принадлежит Тебе. Даруй победы над врагами и сохрани силою Креста Твоего тех, среди которых пребываешь Ты."
         },
         kontakion: {
           churchSlavonic:
             "Вознесы́йся на Крест во́лею,/ тезоимени́тому Твоему́ но́вому жи́тельству,/ щедро́ты Твоя́ да́руй, Христе́ Бо́же,/ возвесели́ нас си́лою Твое́ю,/ побе́ды дая́ нам на сопоста́ты,/ посо́бие иму́щим Твое́ ору́жие ми́ра,// непобеди́мую побе́ду.",
           synodal:
-            "Вознесенный на Крест добровольно, соименному Тебе новому народу милости Твои даруй, Христе Боже; возвесели силою Твоею верных людей Твоих, подавая им победы над врагами, – да имеют они помощь от Тебя, оружие мира, непобедимый знак победы."
+            "Вознесенный на Крест добровольно, соименному Тебе новому народу милости Твои даруй, Христе Боже; возвесели силою Твоею верных людей Твоих, подавая им победы над врагами, да имеют они помощь от Тебя, оружие мира, непобедимый знак победы."
         }
       }
     ]
   },
   6: {
-    title: "Суббота",
+    title: "Песнопения субботы",
     sections: [
       {
         label: "Всем святым",
@@ -205,22 +273,22 @@ const WEEKDAY_HYMNS = {
           churchSlavonic:
             "Апо́столи, му́ченицы и проро́цы,/ святи́телие, преподо́бнии и пра́веднии,/ до́бре по́двиг соверши́вшии и ве́ру соблю́дшии,/ дерзнове́ние иму́ще ко Спа́су,/ о нас Того́, я́ко Бла́га, моли́те// спасти́ся, мо́лимся, душа́м на́шим.",
           synodal:
-            "Апостолы, мученики и пророки, святители, преподобные и праведные, подвиг доблестно совершившие и веру сохранившие, дерзновение пред Спасителем имея, Его за нас, как благого, умолите, молимся, во спасение душам нашим!"
+            "Апостолы, мученики и пророки, святители, преподобные и праведные, подвиг доблестно совершившие и веру сохранившие, дерзновение пред Спасителем имея, Его за нас, как благого, умолите, молимся, во спасение душам нашим."
         },
         kontakion: {
           churchSlavonic:
             "Я́ко нача́тки естества́, Насади́телю тва́ри,/ вселе́нная прино́сит Ти, Го́споди, богоно́сныя му́ченики;/ тех моли́твами в ми́ре глубо́це// Це́рковь Твою́, жи́тельство Твое́ Богоро́дицею соблюди́, Многоми́лостиве.",
           synodal:
-            "Как первые плоды природы Насадителю всего творения вселенная приносит, Тебе, Господи, богоносных мучеников. Их мольбами и ходатайством Богородицы, Церковь Твою – Твой народ в мире глубоком сохрани, Многомилостивый."
+            "Как первые плоды природы Насадителю всего творения вселенная приносит Тебе, Господи, богоносных мучеников. Их мольбами и ходатайством Богородицы, Церковь Твою, Твой народ в мире глубоком сохрани, Многомилостивый."
         }
       },
       {
         label: "За усопших",
         troparion: {
           churchSlavonic:
-            "Помяни́, Го́споди, я́ко благ, рабы Твоя́,/ и, ели́ка в житии́ согреши́ша, прости́:/ никто́же бо безгре́шен, то́кмо Ты,// моги́й и преста́вленным да́ти поко́й.",
+            "Помяни́, Го́споди, я́ко Благ, рабы́ Твоя́,/ и, ели́ка в житии́ согреши́ша, прости́:/ никто́же бо безгре́шен, то́кмо Ты,// моги́й и преста́вленным да́ти поко́й.",
           synodal:
-            "Помяни, Господи, как Благой, рабов Твоих и всё, в чем они в жизни согрешили, прости: ибо никто не безгрешен, кроме Тебя. Ты можешь и преставившимся дать покой."
+            "Помяни, Господи, как Благой, рабов Твоих и всё, в чем они в жизни согрешили, прости; ибо никто не безгрешен, кроме Тебя. Ты можешь и преставившимся дать покой."
         },
         kontakion: {
           churchSlavonic:
@@ -232,20 +300,19 @@ const WEEKDAY_HYMNS = {
     ]
   }
 };
-
 const SUNDAY_HYMNS_BY_TONE = {
   1: {
     troparion: {
       churchSlavonic:
         "Ка́мени запеча́тану от иуде́й/ и во́ином стрегу́щим Пречи́стое Те́ло Твое́,/ воскре́сл еси́ тридне́вный, Спа́се,/ да́руяй ми́рови жи́знь./ Сего́ ра́ди си́лы небе́сныя вопия́ху Ти́, Жизнода́вче:/ сла́ва воскресе́нию Твоему́, Христе́,/ сла́ва Ца́рствию Твоему́,// сла́ва смотре́нию Твоему́, еди́не Человеколю́бче.",
       synodal:
-        "Хотя камень был опечатан иудеями, и воины стерегли пречистое тело Твое, воскрес Ты в третий день, Спаситель, даруя миру жизнь. Потому Силы небесные взывали к Тебе, Податель жизни: «Слава воскресению Твоему, Христе; слава Царству Твоему; слава промыслу Твоему, Единый Человеколюбец!»"
+        "Хотя камень был опечатан иудеями, и воины стерегли пречистое тело Твое, воскрес Ты в третий день, Спаситель, даруя миру жизнь. Потому силы небесные взывали к Тебе, Податель жизни: слава воскресению Твоему, Христе, слава Царству Твоему, слава промыслу Твоему, Единый Человеколюбец."
     },
     kontakion: {
       churchSlavonic:
         "Воскре́сл еси́ я́ко Бо́г из гро́ба во сла́ве,/ и ми́р совоскреси́л еси́;/ и естество́ челове́ческое я́ко Бо́га воспева́ет Тя́, и сме́рть исчезе́;/ Ада́м же лику́ет, Влады́ко;/ Е́ва ны́не от у́з избавля́ема ра́дуется, зову́щи:// Ты́ еси́, И́же все́м подая́, Христе́, воскресе́ние.",
       synodal:
-        "Воскрес Ты, как Бог, из гроба во славе и мир с Собою воскресил. И естество человеческое как Бога воспело Тебя, и исчезла смерть. Адам торжествует, Владыка, и Ева ныне, от уз избавляемая, радуется, взывая: «Ты, Христе, всем даруешь воскресение!»"
+        "Воскрес Ты, как Бог, из гроба во славе и мир с Собою воскресил. И естество человеческое как Бога воспело Тебя, и исчезла смерть. Адам торжествует, Владыка, и Ева ныне, от уз избавляемая, радуется, взывая: Ты, Христе, всем даруешь воскресение."
     }
   },
   2: {
@@ -253,13 +320,13 @@ const SUNDAY_HYMNS_BY_TONE = {
       churchSlavonic:
         "Егда́ снизше́л еси́ к сме́рти, Животе́ Безсме́ртный,/ тогда́ а́д умертви́л еси́ блиста́нием Божества́:/ егда́ же и уме́ршия от преиспо́дних воскреси́л еси́,/ вся́ си́лы небе́сныя взыва́ху:// Жизнода́вче, Христе́ Бо́же на́ш, сла́ва Тебе́.",
       synodal:
-        "Когда сошел Ты к смерти, Жизнь бессмертная, тогда ад умертвил Ты сиянием Божества. Когда же Ты и умерших из преисподней воскресил, все Силы Небесные взывали: «Податель жизни, Христе Боже наш, слава Тебе!»"
+        "Когда сошел Ты к смерти, Жизнь бессмертная, тогда ад умертвил Ты сиянием Божества. Когда же Ты и умерших из преисподней воскресил, все силы небесные взывали: Податель жизни, Христе Боже наш, слава Тебе."
     },
     kontakion: {
       churchSlavonic:
         "Воскре́сл еси́ от гро́ба, Всеси́льне Спа́се,/ и а́д ви́дев чу́до, ужасе́ся,/ и ме́ртвии воста́ша;/ тва́рь же ви́дящи сра́дуется Тебе́,/ и Ада́м свесели́тся,// и ми́р, Спа́се мо́й, воспева́ет Тя́ при́сно.",
       synodal:
-        "Воскрес Ты из гроба, всесильный Спаситель, и ад, увидев это чудо, ужасался, и мертвые восставали. И все творение, видя это, радуется с Тобой, и Адам веселится, и мир Тебя, Спаситель мой, прославляет непрестанно."
+        "Воскрес Ты из гроба, всесильный Спаситель, и ад, увидев это чудо, ужасался, и мертвые восставали. И всё творение, видя это, радуется с Тобой, и Адам веселится, и мир Тебя, Спаситель мой, прославляет непрестанно."
     }
   },
   3: {
@@ -267,13 +334,13 @@ const SUNDAY_HYMNS_BY_TONE = {
       churchSlavonic:
         "Да веселя́тся небе́сная,/ да ра́дуются земна́я,/ я́ко сотвори́ держа́ву/ мы́шцею Свое́ю Госпо́дь,/ попра́ сме́ртию сме́рть,/ пе́рвенец ме́ртвых бы́сть;/ из чре́ва а́дова изба́ви на́с,// и подаде́ ми́рови ве́лию ми́лость.",
       synodal:
-        "Да веселится все небесное, да радуется все земное, ибо явил могущество руки Своей Господь: попрал смертию смерть, сделался первенцем из мертвых, из чрева ада избавил нас и даровал миру великую милость."
+        "Да веселится всё небесное, да радуется всё земное, ибо явил могущество руки Своей Господь: попрал смертию смерть, сделался первенцем из мертвых, из чрева ада избавил нас и даровал миру великую милость."
     },
     kontakion: {
       churchSlavonic:
         "Воскре́сл еси́ дне́сь из гро́ба, Ще́дре,/ и на́с возве́л еси́ от вра́т сме́ртных;/ дне́сь Ада́м лику́ет, и ра́дуется Е́ва,/ вку́пе же и проро́цы с патриа́рхи воспева́ют непреста́нно// Боже́ственную держа́ву вла́сти Твоея́.",
       synodal:
-        "Воскрес Ты в сей день из гроба, Милосердный и вывел нас из врат смерти. В сей день Адам ликует и радуется Ева, а вместе с ними и пророки с патриархами воспевают непрестанно божественную мощь власти Твоей."
+        "Воскрес Ты в сей день из гроба, Милосердный, и вывел нас из врат смерти. В сей день Адам ликует и радуется Ева, а вместе с ними и пророки с патриархами воспевают непрестанно божественную мощь власти Твоей."
     }
   },
   4: {
@@ -281,13 +348,13 @@ const SUNDAY_HYMNS_BY_TONE = {
       churchSlavonic:
         "Све́тлую воскресе́ния про́поведь/ от А́нгела уве́девша Госпо́дни учени́цы/ и пра́деднее осужде́ние отве́ргша,/ апо́столом хва́лящася глаго́лаху:/ испрове́ржеся сме́рть,/ воскре́се Христо́с Бо́г,// да́руяй ми́рови ве́лию ми́лость.",
       synodal:
-        "Радостную весть о воскресении узнав от Ангела, и избавившись от прародительского осуждения, Господни ученицы апостолам возглашали, торжествуя: «Низвержена смерть, воскрес Христос Бог, дарующий миру великую милость!»"
+        "Радостную весть о воскресении узнав от Ангела и избавившись от прародительского осуждения, Господни ученицы апостолам возвещали, торжествуя: низвержена смерть, воскрес Христос Бог, дарующий миру великую милость."
     },
     kontakion: {
       churchSlavonic:
         "Спа́с и Изба́витель мо́й/ из гро́ба, я́ко Бо́г,/ воскреси́ от у́з земноро́дныя,/ и врата́ а́дова сокруши́,// и я́ко Влады́ка воскре́се тридне́вен.",
       synodal:
-        "Спаситель и Избавитель мой от гроба, как Бог воскресил из оков на земле рожденных, и врата ада сокрушил, и как Владыка воскрес на третий день."
+        "Спаситель и Избавитель мой от гроба, как Бог, воскресил из оков земнородных и врата ада сокрушил, и как Владыка воскрес на третий день."
     }
   },
   5: {
@@ -301,7 +368,7 @@ const SUNDAY_HYMNS_BY_TONE = {
       churchSlavonic:
         "Ко а́ду, Спа́се мо́й, соше́л еси́,/ и врата́ сокруши́вый я́ко Всеси́лен,/ уме́рших я́ко Созда́тель совоскреси́л еси́,/ и сме́рти жа́ло сокруши́л еси́,/ и Ада́м от кля́твы изба́влен бы́сть,/ Человеколю́бче, те́мже вси́ зове́м:// спаси́ на́с, Го́споди.",
       synodal:
-        "Во ад сошел Ты, Спаситель мой, и врата его сокрушив, как Всемогущий, как Творец умерших воскресил с Собою, и жало смерти уничтожил, и Адама от проклятия избавил, Человеколюбец. Потому все мы восклицаем Тебе: «Спаси нас, Господи!»"
+        "Во ад сошел Ты, Спаситель мой, и врата его сокрушив, как Всемогущий, как Творец умерших воскресил с Собою, и жало смерти уничтожил, и Адама от проклятия избавил, Человеколюбец. Потому все мы восклицаем Тебе: спаси нас, Господи."
     }
   },
   6: {
@@ -309,13 +376,13 @@ const SUNDAY_HYMNS_BY_TONE = {
       churchSlavonic:
         "А́нгельския си́лы на гро́бе Твое́м,/ и стрегу́щии омертве́ша,/ и стоя́ше Мари́я во гро́бе,/ и́щущи Пречи́стаго Те́ла Твоего́./ Плени́л еси́ а́д, не искуси́вся от него́;/ сре́тил еси́ Де́ву, Да́руяй живо́т.// Воскресы́й из ме́ртвых, Го́споди, сла́ва Тебе́.",
       synodal:
-        "Ангельские Силы – при гробе Твоем, и охранявшие его омертвели, а Мария стояла в гробнице и искала пречистое тело Твое. Ты опустошил ад, не потерпев от него, Ты встретил Деву, Дарующий жизнь. Воскресший из мертвых, Господи, слава Тебе!"
+        "Ангельские силы при гробе Твоем, и охранявшие его омертвели, а Мария стояла у гробницы и искала пречистое тело Твое. Ты опустошил ад, не потерпев от него, Ты встретил Деву, Дарующий жизнь. Воскресший из мертвых, Господи, слава Тебе."
     },
     kontakion: {
       churchSlavonic:
         "Живонача́льною дла́нию/ уме́ршия от мра́чных удо́лий,/ Жизнода́вец, воскреси́в все́х Христо́с Бо́г,/ воскресе́ние подаде́ челове́ческому ро́ду:/ е́сть бо все́х Спаси́тель,// Воскресе́ние и Живо́т, и Бо́г все́х.",
       synodal:
-        "Живоначальною Своею дланию из мрачных глубин всех умерших воскресив, Податель жизни Христос Бог, воскресение даровал человеческой природе, ибо Он – Спаситель всех, Воскресение и Жизнь и Бог всего!"
+        "Живоначальною Своею дланию из мрачных глубин всех умерших воскресив, Податель жизни Христос Бог, воскресение даровал человеческой природе, ибо Он Спаситель всех, Воскресение и Жизнь и Бог всех."
     }
   },
   7: {
@@ -329,7 +396,7 @@ const SUNDAY_HYMNS_BY_TONE = {
       churchSlavonic:
         "Не ктому́ держа́ва сме́ртная/ возмо́жет держа́ти челове́ки:/ Христо́с бо сни́де, сокруша́я и разоря́я си́лы ея́;/ связу́емь быва́ет а́д,/ проро́цы согла́сно ра́дуются,/ предста́, глаго́люще, Спа́с су́щим в ве́ре:// изыди́те, ве́рнии, в воскресе́ние.",
       synodal:
-        "Уже не сможет более удерживать людей власть смерти, ибо сошел Христос сокрушая и разоряя силы ее. Ад связан, пророки согласно радуются: «Явился, – говорят, – Спаситель тем, кто в вере; выходите, верные для воскресения!»"
+        "Уже не сможет более удерживать людей власть смерти, ибо сошел Христос, сокрушая и разоряя силы ее. Ад связан, пророки согласно радуются: явился, говорят, Спаситель тем, кто в вере; выходите, верные, для воскресения."
     }
   },
   8: {
@@ -337,13 +404,13 @@ const SUNDAY_HYMNS_BY_TONE = {
       churchSlavonic:
         "С высоты́ снизше́л еси́, Благоутро́бне,/ погребе́ние прия́л еси́ тридне́вное,/ да на́с свободи́ши страсте́й,// Животе́ и воскресе́ние на́ше. Го́споди, сла́ва Тебе́.",
       synodal:
-        "С высоты сошел Ты, милосердный, благоволил пребыть три дня во гробе, чтобы нас освободить от страстей, – жизнь и воскресение наше, Господи, слава Тебе!"
+        "С высоты сошел Ты, Милосердный, благоволил пребывать три дня во гробе, чтобы нас освободить от страстей, жизнь и воскресение наше, Господи, слава Тебе."
     },
     kontakion: {
       churchSlavonic:
         "Воскре́с из гро́ба, уме́ршия воздви́гл еси́,/ и Ада́ма воскреси́л еси́,/ и Е́ва лику́ет во Твое́м воскресе́нии,/ и мирсти́и концы́ торжеству́ют// е́же из ме́ртвых воста́нием Твои́м, Многоми́лостиве.",
       synodal:
-        "Восстав из гроба, умерших Ты воздвиг, и Адама воскресил, и Ева ликует о Твоем воскресении, и пределы мира торжествуют о Твоем восстании из мертвых, Многомилостивый."
+        "Воскрес из гроба, умерших воздвиг Ты, и Адама воскресил, и Ева ликует о Твоем воскресении, и пределы мира торжествуют о восстании Твоем из мертвых, Многомилостивый."
     }
   }
 };
@@ -371,6 +438,149 @@ function createElement(tagName, className, textContent) {
   return node;
 }
 
+function isParallelTranslation() {
+  return state.translation === "parallel";
+}
+
+function getTranslationOption(translationId) {
+  return TRANSLATION_OPTIONS.find((option) => option.id === translationId) ?? TRANSLATION_OPTIONS[0];
+}
+
+function getTranslationLabel(translationId = state.translation) {
+  return getTranslationOption(translationId).label;
+}
+
+function clampFontScale(value) {
+  return Math.min(FONT_SCALE_MAX, Math.max(FONT_SCALE_MIN, value));
+}
+
+function formatFontScale() {
+  return `${Math.round(state.fontScale * 100)}%`;
+}
+
+function applyFontScale() {
+  document.documentElement.style.setProperty("--reader-scale", String(state.fontScale));
+}
+
+function updateFontControls() {
+  if (fontSizeValue) {
+    fontSizeValue.textContent = formatFontScale();
+  }
+
+  if (fontDecreaseButton) {
+    fontDecreaseButton.disabled = state.fontScale <= FONT_SCALE_MIN;
+  }
+
+  if (fontIncreaseButton) {
+    fontIncreaseButton.disabled = state.fontScale >= FONT_SCALE_MAX;
+  }
+}
+
+function setFontScale(nextScale) {
+  state.fontScale = clampFontScale(Number(nextScale.toFixed(2)));
+  localStorage.setItem(STORAGE_KEYS.fontScale, String(state.fontScale));
+  applyFontScale();
+  updateFontControls();
+}
+
+function getSelectedReadingText() {
+  const selection = window.getSelection();
+
+  if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+    return "";
+  }
+
+  const anchorNode = selection.anchorNode;
+  const focusNode = selection.focusNode;
+
+  if (!anchorNode || !focusNode || !readingView.contains(anchorNode) || !readingView.contains(focusNode)) {
+    return "";
+  }
+
+  return selection
+    .toString()
+    .replace(/\u00a0/g, " ")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function updateSelectionState(message = "") {
+  state.selectedText = getSelectedReadingText();
+
+  if (copySelectionButton) {
+    copySelectionButton.disabled = !state.selectedText;
+  }
+
+  if (selectionStatus) {
+    selectionStatus.textContent = message || (
+      state.selectedText
+        ? `Выделение готово к копированию: ${state.selectedText.length} символов.`
+        : "Выдели нужный отрывок в тексте, затем нажми кнопку."
+    );
+  }
+}
+
+function fallbackCopyText(text) {
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "readonly");
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  textarea.style.pointerEvents = "none";
+  document.body.append(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  textarea.remove();
+}
+
+async function copySelectedText() {
+  const text = getSelectedReadingText();
+
+  if (!text) {
+    updateSelectionState("Сначала выдели нужный отрывок.");
+    return;
+  }
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      fallbackCopyText(text);
+    }
+
+    state.selectedText = text;
+    updateSelectionState("Отрывок скопирован.");
+  } catch (error) {
+    updateSelectionState("Не получилось скопировать автоматически. Попробуй ещё раз после выделения.");
+  }
+}
+
+function applyExternalNamesData() {
+  const namesData = window.PSALTER_NAMES_DATA;
+
+  if (!DATA?.prayers || !namesData) {
+    return;
+  }
+
+  if (Array.isArray(namesData.livingNames)) {
+    const readerNames = Array.isArray(namesData.readerNames) ? namesData.readerNames : [];
+    DATA.prayers.livingPrayer.names = [...namesData.livingNames, ...readerNames];
+  }
+
+  if (Array.isArray(namesData.departedNames)) {
+    DATA.prayers.departedPrayer.names = [...namesData.departedNames];
+  }
+
+  if (typeof namesData.livingLabel === "string" && namesData.livingLabel.trim()) {
+    DATA.prayers.livingPrayer.namesLabel = namesData.livingLabel.trim();
+  }
+
+  if (typeof namesData.departedLabel === "string" && namesData.departedLabel.trim()) {
+    DATA.prayers.departedPrayer.namesLabel = namesData.departedLabel.trim();
+  }
+}
+
 function normalizeMatchingText(value) {
   return String(value)
     .normalize("NFD")
@@ -394,7 +604,66 @@ function looksLikePsalmHeadingContinuation(text) {
   return PSALM_HEADING_CONTINUATIONS.some((marker) => normalized.startsWith(marker));
 }
 
-function normalizePsalmHeading(psalm) {
+function looksLikeSynodalHeading(text) {
+  const normalized = normalizeMatchingText(text);
+  return SYNODAL_HEADING_MARKERS.some((marker) => normalized.startsWith(marker));
+}
+
+function looksLikeSynodalCommentary(text) {
+  const cleaned = String(text).replace(/\s+/g, " ").trim();
+  const normalized = normalizeMatchingText(cleaned);
+  const numberedFragments = cleaned.match(/\b\d+\s+[А-Яа-яЁёA-Za-z]/gu) || [];
+
+  if (/^\d+\s/u.test(cleaned) || numberedFragments.length >= 2) {
+    return true;
+  }
+
+  if (/^\[[^\]]+\]\.?\s+\S/u.test(cleaned) && cleaned.length > 40) {
+    return true;
+  }
+
+  if (!looksLikeSynodalHeading(cleaned) && cleaned.length > 40) {
+    return true;
+  }
+
+  return SYNODAL_COMMENTARY_MARKERS.some((marker) => normalized.startsWith(marker));
+}
+
+function extractSynodalHeading(text) {
+  const cleaned = String(text).replace(/\s+/g, " ").trim();
+
+  if (!cleaned) {
+    return "";
+  }
+
+  if (!looksLikeSynodalCommentary(cleaned) && looksLikeSynodalHeading(cleaned)) {
+    return cleaned;
+  }
+
+  const prefixMatch = cleaned.match(/^\[[^\]]+\]\.?/u);
+  if (prefixMatch) {
+    return prefixMatch[0].trim();
+  }
+
+  const chunks = cleaned.match(/\[[^\]]+\]\.?|[^.?!]+[.?!]?/gu) || [cleaned];
+  let suffix = "";
+
+  for (let index = chunks.length - 1; index >= 0; index -= 1) {
+    suffix = `${chunks[index].trim()} ${suffix}`.trim();
+
+    if (suffix.length > 120) {
+      break;
+    }
+
+    if (looksLikeSynodalHeading(suffix) && !looksLikeSynodalCommentary(suffix)) {
+      return suffix;
+    }
+  }
+
+  return "";
+}
+
+function normalizePsalmHeading(psalm, translationId) {
   if (!psalm || !Array.isArray(psalm.verses) || psalm.verses.length === 0) {
     return;
   }
@@ -424,6 +693,10 @@ function normalizePsalmHeading(psalm) {
   }
 
   psalm.heading = headingParts.join(" ").trim();
+
+  if (translationId === "synodal") {
+    psalm.heading = extractSynodalHeading(psalm.heading);
+  }
 }
 
 function normalizeLoadedData() {
@@ -435,7 +708,7 @@ function normalizeLoadedData() {
     for (const kathisma of DATA.kathismas[translationId]) {
       for (const segment of kathisma.segments) {
         for (const psalm of segment.psalms) {
-          normalizePsalmHeading(psalm);
+          normalizePsalmHeading(psalm, translationId);
         }
       }
     }
@@ -531,7 +804,7 @@ function getWeekdayHymnsForToday() {
     }
 
     return {
-      title: "Воскресные песнопения",
+      title: "Тропари дня недели",
       lead: `Сегодня ${formatRussianDate(dateString)}. Ниже — воскресные тропарь и кондак ${tone}-го гласа.`,
       sections: [
         {
@@ -543,15 +816,9 @@ function getWeekdayHymnsForToday() {
     };
   }
 
-  const sectionCount = base.sections.length;
-  const lead =
-    sectionCount > 1
-      ? `Сегодня ${formatRussianDate(dateString)}. Ниже — все положенные песнопения по дню недели.`
-      : `Сегодня ${formatRussianDate(dateString)}. Ниже — тропарь и кондак дня недели.`;
-
   return {
-    title: "Песнопения дня недели",
-    lead,
+    title: "Тропари дня недели",
+    lead: `Сегодня ${formatRussianDate(dateString)}. Ниже — песнопения по дню недели.`,
     sections: base.sections
   };
 }
@@ -599,19 +866,13 @@ function getKathismaData(translationId, kathismaId) {
 function buildTranslationToggle() {
   translationToggle.innerHTML = "";
 
-  for (const translation of DATA.translations) {
+  for (const translation of TRANSLATION_OPTIONS) {
     const button = createElement("button", "translation-button");
     button.type = "button";
     button.dataset.translation = translation.id;
 
     const title = createElement("strong", "", translation.label);
-    const description = createElement(
-      "span",
-      "",
-      translation.id === "churchSlavonic"
-        ? "Церковнославянский текст, показанный удобным гражданским шрифтом."
-        : "Современный синодальный текст с привычной русской подачей."
-    );
+    const description = createElement("span", "", translation.description);
 
     button.append(title, description);
 
@@ -685,10 +946,6 @@ function getFullAfterKathismaBlock(kathismaId) {
   return DATA.prayers.afterKathismaFull?.find((item) => item.kathismaId === kathismaId) ?? null;
 }
 
-function getTrisagionAfterKathismaLines() {
-  return DATA.prayers.commonBeginning.slice(3, 9);
-}
-
 function getGospelPreparationPrayer() {
   const gospelPrayers = DATA.prayers.gospelBeforeMatthew;
 
@@ -736,7 +993,7 @@ function renderKathismaGrid() {
 }
 
 function renderSummary(kathismaNumber) {
-  const translationLabel = DATA.translations.find((translation) => translation.id === state.translation)?.label ?? "";
+  const translationLabel = getTranslationLabel();
   const prayerModeLabel = getAfterKathismaModeLabel();
 
   summaryView.innerHTML = `
@@ -758,6 +1015,7 @@ function renderReadingNav() {
   const navItems = [
     { id: "common-beginning", label: "Начало" },
     { id: "segment-1", label: "Слава 1" },
+    { id: "weekday-troparia", label: "Тропари недели" },
     { id: "segment-2", label: "Слава 2" },
     { id: "matthew-gospel", label: "Матфей" },
     { id: "segment-3", label: "Слава 3" },
@@ -791,10 +1049,10 @@ function renderNameCloud(names) {
   return names.map((name) => `<span class="name-pill">${escapeHtml(name)}</span>`).join("");
 }
 
-function renderPsalmCard(psalm) {
+function renderPsalmInner(psalm, translationId) {
   const heading = psalm.heading ? `<div class="psalm-heading">${escapeHtml(psalm.heading)}</div>` : "";
   const subtitle = psalm.subtitle ? `<span class="psalm-subtitle">${escapeHtml(psalm.subtitle)}</span>` : "";
-  const textClass = state.translation === "churchSlavonic" ? "psalm-text church-slavonic" : "psalm-text";
+  const textClass = translationId === "churchSlavonic" ? "psalm-text church-slavonic" : "psalm-text";
 
   const verses = psalm.verses
     .map(
@@ -808,13 +1066,36 @@ function renderPsalmCard(psalm) {
     .join("");
 
   return `
+    <div class="psalm-title">
+      <h4>${escapeHtml(psalm.title)}</h4>
+      ${subtitle}
+    </div>
+    ${heading}
+    <div class="${textClass}">${verses}</div>
+  `;
+}
+
+function renderPsalmCard(psalm, translationId = state.translation) {
+  return `
     <article class="psalm-card">
-      <div class="psalm-title">
-        <h4>${escapeHtml(psalm.title)}</h4>
-        ${subtitle}
+      ${renderPsalmInner(psalm, translationId)}
+    </article>
+  `;
+}
+
+function renderParallelPsalmCard(churchPsalm, synodalPsalm) {
+  return `
+    <article class="psalm-card parallel-psalm-card">
+      <div class="parallel-psalm-grid">
+        <section class="parallel-psalm-column">
+          <div class="parallel-translation-label">ЦСЯ</div>
+          ${renderPsalmInner(churchPsalm, "churchSlavonic")}
+        </section>
+        <section class="parallel-psalm-column">
+          <div class="parallel-translation-label">Синодальный</div>
+          ${renderPsalmInner(synodalPsalm, "synodal")}
+        </section>
       </div>
-      ${heading}
-      <div class="${textClass}">${verses}</div>
     </article>
   `;
 }
@@ -862,11 +1143,9 @@ function renderGospelAfterSecondSlava() {
         <div class="prayer-block">
           <h3>Молитва после Евангелия</h3>
           <div class="prayer-text">${renderPrayerText(DATA.prayers.gospelBeforeMatthew?.afterPrayer || GOSPEL_AFTER_PRAYER)}</div>
-
-          <div class="names-label">${escapeHtml(DATA.prayers.livingPrayer.namesLabel || "О здравии")}</div>
+          <div class="names-label">Имена после Евангелия</div>
           <div class="name-cloud">${renderNameCloud(DATA.prayers.livingPrayer.names)}</div>
-
-          <div class="names-label">${escapeHtml(DATA.prayers.departedPrayer.namesLabel || "Об упокоении")}</div>
+          <div class="names-label">${escapeHtml(DATA.prayers.departedPrayer.namesLabel)}</div>
           <div class="name-cloud">${renderNameCloud(DATA.prayers.departedPrayer.names)}</div>
         </div>
       `
@@ -900,11 +1179,10 @@ function renderAfterKathismaSection(kathismaId) {
         <div class="section-header">
           <p class="card-kicker">По окончании</p>
           <h2>Молитва после кафизмы</h2>
-          <p class="section-lead">В краткой версии после кафизмы остаётся только заключительная молитва.</p>
+          <p class="section-lead">Краткая версия оставляет только заключительную молитву, как и раньше.</p>
         </div>
         <div class="prayer-flow">
           <div class="prayer-block">
-            <h3>Молитва после кафизмы</h3>
             <div class="prayer-text">${renderPrayerLines(DATA.prayers.afterKathisma)}</div>
           </div>
         </div>
@@ -923,11 +1201,6 @@ function renderAfterKathismaSection(kathismaId) {
         </div>
         <div class="prayer-flow">
           <div class="prayer-block">
-            <h3>Трисвятое по Отче наш</h3>
-            <div class="prayer-text">${renderPrayerLines(getTrisagionAfterKathismaLines())}</div>
-          </div>
-          <div class="prayer-block">
-            <h3>Молитва после кафизмы</h3>
             <div class="prayer-text">${renderPrayerLines(DATA.prayers.afterKathisma)}</div>
           </div>
         </div>
@@ -941,14 +1214,14 @@ function renderAfterKathismaSection(kathismaId) {
         <p class="card-kicker">По окончании</p>
         <h2>Полный порядок после кафизмы</h2>
         <p class="section-lead">
-          После кафизмы читается Трисвятое по Отче наш, затем тропари, 40-кратное «Господи, помилуй»,
-          молитва по соглашению и последняя молитва этой кафизмы.
+          После Трисвятого по Отче наш, тропарей и 40-кратного «Господи, помилуй» сначала идёт молитва по соглашению,
+          а затем последняя молитва этой кафизмы.
         </p>
       </div>
       <div class="prayer-flow">
         <div class="prayer-block">
           <h3>Трисвятое по Отче наш</h3>
-          <div class="prayer-text">${renderPrayerLines(getTrisagionAfterKathismaLines())}</div>
+          <div class="prayer-text">${renderPrayerLines(DATA.prayers.commonBeginning.slice(3, 9))}</div>
         </div>
         <div class="prayer-block">
           <h3>Тропари после кафизмы</h3>
@@ -971,38 +1244,42 @@ function renderAfterKathismaSection(kathismaId) {
   `;
 }
 
+function renderWeekdayHymnsSection() {
+  const weekdayHymns = getWeekdayHymnsForToday();
+
+  if (!weekdayHymns) {
+    return "";
+  }
+
+  return `
+    <article class="prayer-card weekday-hymns-card" id="weekday-troparia">
+      <h3>${escapeHtml(weekdayHymns.title)}</h3>
+      <p class="gospel-note">${escapeHtml(weekdayHymns.lead)}</p>
+      <div class="weekday-hymns-grid">
+        ${weekdayHymns.sections
+          .map(
+            (section) => `
+              <div class="prayer-block weekday-hymn-block">
+                <h3>${escapeHtml(section.label)}</h3>
+                <div class="weekday-hymn-piece">
+                  <div class="names-label">Тропарь</div>
+                  <div class="prayer-text">${renderPrayerText(getWeekdayHymnText(section.troparion))}</div>
+                </div>
+                <div class="weekday-hymn-piece">
+                  <div class="names-label">Кондак</div>
+                  <div class="prayer-text">${renderPrayerText(getWeekdayHymnText(section.kontakion))}</div>
+                </div>
+              </div>
+            `
+          )
+          .join("")}
+      </div>
+    </article>
+  `;
+}
+
 function renderTroparionSection() {
   const troparion = getTroparionData();
-  const weekdayHymns = getWeekdayHymnsForToday();
-  const weekdayHymnsHtml = weekdayHymns
-    ? `
-      <div class="weekday-hymns">
-        <div class="section-header weekday-hymns-header">
-          <h3>${escapeHtml(weekdayHymns.title)}</h3>
-          <p class="section-lead">${escapeHtml(weekdayHymns.lead)}</p>
-        </div>
-        <div class="weekday-hymns-grid">
-          ${weekdayHymns.sections
-            .map(
-              (section) => `
-                <article class="prayer-block weekday-hymn-block">
-                  <h3>${escapeHtml(section.label)}</h3>
-                  <div class="weekday-hymn-piece">
-                    <div class="names-label">Тропарь</div>
-                    <div class="prayer-text">${renderPrayerText(getWeekdayHymnText(section.troparion))}</div>
-                  </div>
-                  <div class="weekday-hymn-piece">
-                    <div class="names-label">Кондак</div>
-                    <div class="prayer-text">${renderPrayerText(getWeekdayHymnText(section.kontakion))}</div>
-                  </div>
-                </article>
-              `
-            )
-            .join("")}
-        </div>
-      </div>
-    `
-    : "";
 
   return `
     <section class="reading-section troparion-section" id="troparia-day">
@@ -1013,7 +1290,6 @@ function renderTroparionSection() {
           Открывается раздел «Тропари» на ${escapeHtml(troparion.formattedDate)} по московскому времени.
         </p>
       </div>
-      ${weekdayHymnsHtml}
       <div class="troparion-actions">
         <a class="ghost-link-button" href="${escapeHtml(troparion.url)}" target="_blank" rel="noreferrer">
           Открыть отдельно
@@ -1037,8 +1313,11 @@ function renderTroparionSection() {
 }
 
 function renderReading(kathismaNumber) {
-  const kathisma = getKathismaData(state.translation, kathismaNumber);
-  const translationLabel = DATA.translations.find((translation) => translation.id === state.translation)?.label ?? "";
+  const parallelMode = isParallelTranslation();
+  const churchKathisma = getKathismaData("churchSlavonic", kathismaNumber);
+  const synodalKathisma = getKathismaData("synodal", kathismaNumber);
+  const kathisma = parallelMode ? churchKathisma : getKathismaData(state.translation, kathismaNumber);
+  const translationLabel = getTranslationLabel();
   const prayerModeLabel = getAfterKathismaModeLabel();
   const uniquePsalmCount = new Set(kathisma.segments.flatMap((segment) => segment.psalms.map((psalm) => psalm.number))).size;
 
@@ -1063,8 +1342,15 @@ function renderReading(kathismaNumber) {
               segment.prayerType === "living" ? "После славы — молитва о живых" : "После славы — молитва об усопших"
             }</span>
           </div>
-          ${segment.psalms.map(renderPsalmCard).join("")}
+          ${segment.psalms
+            .map((psalm, psalmIndex) =>
+              parallelMode
+                ? renderParallelPsalmCard(psalm, synodalKathisma.segments[index].psalms[psalmIndex])
+                : renderPsalmCard(psalm, state.translation)
+            )
+            .join("")}
           ${renderPrayerCard(segment.prayerType, index + 1)}
+          ${index === 0 ? renderWeekdayHymnsSection() : ""}
           ${index === 1 ? renderGospelAfterSecondSlava() : ""}
         </section>
       `
@@ -1080,6 +1366,11 @@ function renderReading(kathismaNumber) {
           Выбран ${escapeHtml(translationLabel)}. Здесь уже собраны обычное начало, сама кафизма, славы и молитвы с
           именами о здравии и об упокоении.
         </p>
+        ${
+          parallelMode
+            ? '<p class="section-lead">В параллельном режиме сами псалмы показаны в двух столбцах: ЦСЯ слева, синодальный перевод справа.</p>'
+            : ""
+        }
         <p class="section-lead">${escapeHtml(prayerModeLabel)}.</p>
         <p class="section-lead">
           В этой кафизме ${uniquePsalmCount} ${psalmWord}.
@@ -1121,6 +1412,8 @@ function render() {
   renderReadingNav();
   renderReading(state.kathismaId);
   kathismaSelect.value = String(state.kathismaId);
+  updateFontControls();
+  updateSelectionState();
 }
 
 function initialize() {
@@ -1133,11 +1426,15 @@ function initialize() {
     return;
   }
 
+  applyExternalNamesData();
   normalizeLoadedData();
   populateKathismaSelect();
 
-  state.translation = localStorage.getItem(STORAGE_KEYS.translation) || DATA.translations[0].id;
+  const savedTranslation = localStorage.getItem(STORAGE_KEYS.translation);
+  state.translation = TRANSLATION_OPTIONS.some((option) => option.id === savedTranslation) ? savedTranslation : "churchSlavonic";
   state.prayerVersion = localStorage.getItem(STORAGE_KEYS.prayerVersion) || "full";
+  state.fontScale = clampFontScale(Number(localStorage.getItem(STORAGE_KEYS.fontScale) || 1));
+  applyFontScale();
 
   const savedKathisma = Number(localStorage.getItem(STORAGE_KEYS.kathisma) || 1);
   state.kathismaId = Number.isFinite(savedKathisma) && savedKathisma >= 1 && savedKathisma <= 20 ? savedKathisma : 1;
@@ -1146,6 +1443,27 @@ function initialize() {
     state.kathismaId = Number(event.target.value);
     localStorage.setItem(STORAGE_KEYS.kathisma, String(state.kathismaId));
     render();
+  });
+
+  fontDecreaseButton?.addEventListener("click", () => {
+    setFontScale(state.fontScale - FONT_SCALE_STEP);
+  });
+
+  fontIncreaseButton?.addEventListener("click", () => {
+    setFontScale(state.fontScale + FONT_SCALE_STEP);
+  });
+
+  fontResetButton?.addEventListener("click", () => {
+    setFontScale(1);
+    updateSelectionState("Размер шрифта сброшен.");
+  });
+
+  copySelectionButton?.addEventListener("click", () => {
+    void copySelectedText();
+  });
+
+  document.addEventListener("selectionchange", () => {
+    updateSelectionState();
   });
 
   render();

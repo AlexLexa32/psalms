@@ -42,6 +42,46 @@ const PSALM_HEADING_START_MARKERS = [
   "раба господня"
 ];
 const PSALM_HEADING_CONTINUATIONS = ["егда", "внегда", "яже", "еже", "жене", "сына", "при", "когда", "после", "о "];
+const SYNODAL_HEADING_MARKERS = [
+  "[",
+  "псалом",
+  "песнь восхождения",
+  "начальнику хора",
+  "учение",
+  "молитва",
+  "хвала",
+  "аллилу",
+  "давида",
+  "соломона",
+  "асафа",
+  "сынов кореевых",
+  "сынов кореовых",
+  "аггея",
+  "захарии",
+  "иеремии",
+  "иезекииля",
+  "моисея"
+];
+const SYNODAL_COMMENTARY_MARKERS = [
+  "содержание псалма",
+  "псалом представляет",
+  "псалмопевец",
+  "пораженный",
+  "при возвращении",
+  "жизнь в единении",
+  "надеющийся",
+  "ходящий",
+  "много теснили",
+  "если бы не господь",
+  "без бога",
+  "господи, ты знаешь",
+  "во время бедствий",
+  "когда я взывал",
+  "я постоянно обращаюсь",
+  "я возрадовался",
+  "только к тебе",
+  "при реках вавилона"
+];
 
 const people = [
   { id: "nataliya-vsehoroshonatash", name: "Наталии", handle: "@vsehoroshonatash", startKathisma: 1, group: "Основной круг" },
@@ -219,6 +259,65 @@ function looksLikePsalmHeadingContinuation(text) {
   return PSALM_HEADING_CONTINUATIONS.some((marker) => normalized.startsWith(marker));
 }
 
+function looksLikeSynodalHeading(text) {
+  const normalized = normalizeMatchingText(text);
+  return SYNODAL_HEADING_MARKERS.some((marker) => normalized.startsWith(marker));
+}
+
+function looksLikeSynodalCommentary(text) {
+  const cleaned = String(text).replace(/\s+/g, " ").trim();
+  const normalized = normalizeMatchingText(cleaned);
+  const numberedFragments = cleaned.match(/\b\d+\s+[А-Яа-яЁёA-Za-z]/gu) || [];
+
+  if (/^\d+\s/u.test(cleaned) || numberedFragments.length >= 2) {
+    return true;
+  }
+
+  if (/^\[[^\]]+\]\.?\s+\S/u.test(cleaned) && cleaned.length > 40) {
+    return true;
+  }
+
+  if (!looksLikeSynodalHeading(cleaned) && cleaned.length > 40) {
+    return true;
+  }
+
+  return SYNODAL_COMMENTARY_MARKERS.some((marker) => normalized.startsWith(marker));
+}
+
+function extractSynodalHeading(text) {
+  const cleaned = String(text).replace(/\s+/g, " ").trim();
+
+  if (!cleaned) {
+    return "";
+  }
+
+  if (!looksLikeSynodalCommentary(cleaned) && looksLikeSynodalHeading(cleaned)) {
+    return cleaned;
+  }
+
+  const prefixMatch = cleaned.match(/^\[[^\]]+\]\.?/u);
+  if (prefixMatch) {
+    return prefixMatch[0].trim();
+  }
+
+  const chunks = cleaned.match(/\[[^\]]+\]\.?|[^.?!]+[.?!]?/gu) || [cleaned];
+  let suffix = "";
+
+  for (let index = chunks.length - 1; index >= 0; index -= 1) {
+    suffix = `${chunks[index].trim()} ${suffix}`.trim();
+
+    if (suffix.length > 120) {
+      break;
+    }
+
+    if (looksLikeSynodalHeading(suffix) && !looksLikeSynodalCommentary(suffix)) {
+      return suffix;
+    }
+  }
+
+  return "";
+}
+
 async function fetchWithRetry(url, { mode = "json", retries = 4, timeoutMs = 35000 } = {}) {
   for (let attempt = 1; attempt <= retries; attempt += 1) {
     const controller = new AbortController();
@@ -351,7 +450,7 @@ function parseAzbykaPsalm(html, number, langCode) {
   return {
     number,
     title,
-    heading: headingParts.join(" ").trim(),
+    heading: langCode === "r" ? extractSynodalHeading(headingParts.join(" ").trim()) : headingParts.join(" ").trim(),
     verses
   };
 }

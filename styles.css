@@ -1,4 +1,5 @@
 :root {
+  --reader-scale: 1;
   --bg-main: #efe4d1;
   --bg-soft: rgba(255, 250, 241, 0.82);
   --bg-card: rgba(255, 252, 246, 0.88);
@@ -24,6 +25,7 @@
 
 html {
   scroll-behavior: smooth;
+  font-size: calc(16px * var(--reader-scale));
 }
 
 body {
@@ -105,6 +107,26 @@ body::before {
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
+}
+
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.brand-row .eyebrow {
+  margin-bottom: 0;
+}
+
+.brand-logo {
+  width: 76px;
+  height: 76px;
+  object-fit: contain;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: 0 12px 24px rgba(125, 43, 33, 0.12);
 }
 
 .hero h1 {
@@ -369,6 +391,64 @@ input[type="date"]:focus {
   background: rgba(255, 255, 255, 0.86);
 }
 
+.ghost-action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  width: 100%;
+  padding: 0 16px;
+  border: 1px solid rgba(125, 43, 33, 0.16);
+  border-radius: 16px;
+  color: var(--accent-strong);
+  font: inherit;
+  background: rgba(255, 255, 255, 0.66);
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+}
+
+.ghost-action-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(125, 43, 33, 0.3);
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.ghost-action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tool-stack {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.font-stepper {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr) 68px;
+  gap: 10px;
+  align-items: center;
+}
+
+.font-size-value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border: 1px solid rgba(125, 43, 33, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.56);
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+.tool-note {
+  margin: 0;
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
 .kathisma-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -551,6 +631,10 @@ input[type="date"]:focus {
   padding: 18px 20px;
 }
 
+.parallel-psalm-card {
+  padding: 20px;
+}
+
 .psalm-title {
   display: flex;
   flex-wrap: wrap;
@@ -597,6 +681,33 @@ input[type="date"]:focus {
   font-size: 1.05rem;
   line-height: 1.95;
   letter-spacing: 0.01em;
+}
+
+.parallel-psalm-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.parallel-psalm-column {
+  min-width: 0;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(125, 43, 33, 0.08);
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.parallel-translation-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  margin-bottom: 12px;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: var(--accent-strong);
+  background: rgba(125, 43, 33, 0.08);
+  font-size: 0.88rem;
+  font-weight: 700;
 }
 
 .prayer-card {
@@ -715,36 +826,6 @@ input[type="date"]:focus {
   overflow: hidden;
 }
 
-.weekday-hymns {
-  display: grid;
-  gap: 18px;
-  margin-top: 18px;
-}
-
-.weekday-hymns-header h3 {
-  margin: 0;
-  font-size: 1.2rem;
-}
-
-.weekday-hymns-grid {
-  display: grid;
-  gap: 16px;
-}
-
-.weekday-hymn-block {
-  display: grid;
-  gap: 16px;
-}
-
-.weekday-hymn-piece {
-  display: grid;
-  gap: 10px;
-}
-
-.weekday-hymn-piece .names-label {
-  margin-top: 0;
-}
-
 .troparion-actions {
   margin-top: 18px;
 }
@@ -774,6 +855,11 @@ input[type="date"]:focus {
 
 .troparion-source a {
   color: var(--accent);
+}
+
+::selection {
+  color: #fff8f0;
+  background: rgba(125, 43, 33, 0.72);
 }
 
 .loading-state {
@@ -840,6 +926,15 @@ input[type="date"]:focus {
     padding-bottom: 22px;
   }
 
+  .brand-row {
+    align-items: flex-start;
+  }
+
+  .brand-logo {
+    width: 64px;
+    height: 64px;
+  }
+
   .field-grid {
     grid-template-columns: 1fr;
   }
@@ -865,6 +960,10 @@ input[type="date"]:focus {
   .gospel-verse {
     grid-template-columns: 1fr;
     gap: 4px;
+  }
+
+  .parallel-psalm-grid {
+    grid-template-columns: 1fr;
   }
 
   .troparion-frame {
