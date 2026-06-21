@@ -147,6 +147,29 @@ const SHORT_BEFORE_KATHISMA_ENDING = [
   "Го́споди, поми́луй. (12 раз.)",
   "Слава Отцу, и Сыну, и Святому Духу, и ныне, и присно, и во веки веков. Аминь."
 ];
+const SYNODAL_HEADING_REPAIRS = {
+  88: "Учение Ефама Езрахита.",
+  119: "Песнь восхождения.",
+  120: "Песнь восхождения.",
+  121: "Песнь восхождения. Давида.",
+  122: "Песнь восхождения.",
+  123: "Песнь восхождения. Давида.",
+  124: "Песнь восхождения.",
+  125: "Песнь восхождения.",
+  126: "Песнь восхождения. Соломона.",
+  127: "Песнь восхождения.",
+  128: "Песнь восхождения.",
+  129: "Песнь восхождения.",
+  130: "Песнь восхождения. Давида.",
+  131: "Песнь восхождения.",
+  132: "Песнь восхождения. Давида.",
+  133: "Песнь восхождения.",
+  138: "Начальнику хора. Псалом Давида.",
+  139: "Начальнику хора. Псалом Давида.",
+  140: "Псалом Давида.",
+  141: "Учение Давида. Молитва его, когда он был в пещере.",
+  142: "Псалом Давида, [когда он преследуем был сыном своим Авессаломом]."
+};
 const WEEKDAY_HYMNS = {
   0: {
     title: "Воскресные песнопения"
@@ -699,6 +722,80 @@ function normalizePsalmHeading(psalm, translationId) {
   }
 }
 
+function prependPsalmVerse(psalm, verseNumber, text) {
+  if (psalm.verses.some((verse) => verse.number === verseNumber)) {
+    return;
+  }
+
+  psalm.verses.unshift({
+    number: verseNumber,
+    text
+  });
+}
+
+function removePsalmVerse(psalm, verseNumber) {
+  const index = psalm.verses.findIndex((verse) => verse.number === verseNumber);
+
+  if (index >= 0) {
+    psalm.verses.splice(index, 1);
+  }
+}
+
+function stripLeadingNumberPrefix(text) {
+  return String(text).replace(/^\d+\s+/u, "").trim();
+}
+
+function repairKnownPsalmData(psalm, translationId) {
+  if (translationId === "churchSlavonic" && psalm.number === 4 && psalm.verses[0]?.number === 3) {
+    prependPsalmVerse(
+      psalm,
+      2,
+      "Внегда́ призва́ти ми, услы́ша мя Бог пра́вды моея́, в ско́рби распространи́л мя еси́, уще́дри мя и услы́ши моли́тву мою́."
+    );
+    psalm.heading = "В коне́ц, в пе́снех псало́м Дави́ду.";
+  }
+
+  if (translationId === "churchSlavonic" && psalm.number === 28 && psalm.verses[0]?.number === 3) {
+    prependPsalmVerse(
+      psalm,
+      2,
+      "Принеси́те Го́сподеви сы́нове Бо́жии, принеси́те Го́сподеви, сы́ны о́вни, принеси́те Го́сподеви сла́ву и честь. Принеси́те Го́сподеви сла́ву и́мени Его́, поклони́теся Го́сподеви во дворе́ святе́м Его́."
+    );
+    psalm.heading = "Псало́м Дави́ду, исхо́да ски́нии.";
+  }
+
+  if (translationId === "synodal" && psalm.number === 4 && psalm.verses[0]?.number === 3) {
+    prependPsalmVerse(
+      psalm,
+      2,
+      "Когда я взываю, услышь меня, Боже правды моей! В тесноте Ты давал мне простор. Помилуй меня и услышь молитву мою."
+    );
+    psalm.heading = "Начальнику хора. На струнных орудиях. Псалом Давида.";
+  }
+
+  if (translationId === "synodal" && SYNODAL_HEADING_REPAIRS[psalm.number]) {
+    psalm.heading = SYNODAL_HEADING_REPAIRS[psalm.number];
+  }
+
+  if (translationId === "synodal" && psalm.number === 125 && psalm.verses[0]?.number === 2) {
+    prependPsalmVerse(psalm, 1, "Когда возвращал Господь плен Сиона, мы были как бы видящие во сне:");
+  }
+
+  if (translationId === "synodal" && psalm.number === 88 && psalm.verses[0]?.text.includes("Учение Ефама Езрахита")) {
+    removePsalmVerse(psalm, 1);
+  }
+
+  if (translationId === "synodal" && psalm.number === 139 && psalm.verses[0]?.text.startsWith("Начальнику хора. Псалом Давида")) {
+    removePsalmVerse(psalm, 1);
+  }
+
+  if (translationId === "synodal" && psalm.number === 141) {
+    for (const verse of psalm.verses) {
+      verse.text = stripLeadingNumberPrefix(verse.text);
+    }
+  }
+}
+
 function normalizeLoadedData() {
   if (!DATA?.kathismas) {
     return;
@@ -709,6 +806,7 @@ function normalizeLoadedData() {
       for (const segment of kathisma.segments) {
         for (const psalm of segment.psalms) {
           normalizePsalmHeading(psalm, translationId);
+          repairKnownPsalmData(psalm, translationId);
         }
       }
     }
@@ -1179,7 +1277,6 @@ function renderAfterKathismaSection(kathismaId) {
         <div class="section-header">
           <p class="card-kicker">По окончании</p>
           <h2>Молитва после кафизмы</h2>
-          <p class="section-lead">Краткая версия оставляет только заключительную молитву, как и раньше.</p>
         </div>
         <div class="prayer-flow">
           <div class="prayer-block">
