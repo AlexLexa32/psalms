@@ -12,8 +12,8 @@ const outputFile = path.join(rootDir, "data.js");
 const AZBYKA_BASE = "https://azbyka.ru/biblia/";
 const execFileAsync = promisify(execFile);
 const MATTHEW_CHAPTER_COUNT = 28;
-const GOSPEL_CYCLE_START_DATE = "2026-06-16";
-const GOSPEL_CYCLE_START_ZACHALO = 4;
+const GOSPEL_CYCLE_START_DATE = "2026-08-15";
+const GOSPEL_CYCLE_START_ZACHALO = 31;
 const PSALM_HEADING_START_MARKERS = [
   "в конец",
   "псалом",
