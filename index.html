@@ -15,6 +15,7 @@
     <link rel="shortcut icon" href="./site-logo.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
     <link rel="manifest" href="./site.webmanifest" />
+    <link rel="stylesheet" href="https://slavonic.github.io/css/fonts.css" type="text/css" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -32,7 +33,7 @@
           </p>
           <div class="hero-notes">
             <span class="note-chip">Прямой выбор кафизмы</span>
-            <span class="note-chip">ЦСЯ в гражданском шрифте</span>
+            <span class="note-chip">Два режима ЦСЯ</span>
             <span class="note-chip">Параллельный режим</span>
             <span class="note-chip">1 и 2 слава о живых</span>
             <span class="note-chip">3 слава об усопших</span>
@@ -114,6 +115,16 @@
                 </button>
               </div>
               <button id="font-reset-button" class="ghost-action-button" type="button">Сбросить размер</button>
+              <div class="font-stepper">
+                <button id="weight-decrease-button" class="ghost-action-button" type="button" aria-label="Сделать шрифт тоньше">
+                  T-
+                </button>
+                <div id="font-weight-value" class="font-size-value" aria-live="polite">500</div>
+                <button id="weight-increase-button" class="ghost-action-button" type="button" aria-label="Сделать шрифт толще">
+                  T+
+                </button>
+              </div>
+              <button id="weight-reset-button" class="ghost-action-button" type="button">Сбросить толщину</button>
               <button id="copy-selection-button" class="ghost-action-button" type="button" disabled>
                 Копировать выделенное
               </button>

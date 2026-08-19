@@ -4,7 +4,8 @@ const STORAGE_KEYS = {
   translation: "psalter.translation.v2",
   kathisma: "psalter.kathisma",
   prayerVersion: "psalter.prayerVersion.v2",
-  fontScale: "psalter.fontScale.v1"
+  fontScale: "psalter.fontScale.v1",
+  fontWeight: "psalter.fontWeight.v1"
 };
 
 const MOSCOW_TIMEZONE = "Europe/Moscow";
@@ -82,6 +83,7 @@ const state = {
   kathismaId: 1,
   prayerVersion: "full",
   fontScale: 1,
+  fontWeight: 500,
   selectedText: ""
 };
 
@@ -96,6 +98,10 @@ const fontDecreaseButton = document.getElementById("font-decrease-button");
 const fontIncreaseButton = document.getElementById("font-increase-button");
 const fontResetButton = document.getElementById("font-reset-button");
 const fontSizeValue = document.getElementById("font-size-value");
+const weightDecreaseButton = document.getElementById("weight-decrease-button");
+const weightIncreaseButton = document.getElementById("weight-increase-button");
+const weightResetButton = document.getElementById("weight-reset-button");
+const fontWeightValue = document.getElementById("font-weight-value");
 const copySelectionButton = document.getElementById("copy-selection-button");
 const selectionStatus = document.getElementById("selection-status");
 
@@ -116,6 +122,11 @@ const TRANSLATION_OPTIONS = [
     description: "Церковнославянский текст, показанный удобным гражданским шрифтом."
   },
   {
+    id: "churchSlavonicLiturgical",
+    label: "ЦСЯ шрифтом",
+    description: "Тот же церковнославянский текст в шрифте Ponomar."
+  },
+  {
     id: "synodal",
     label: "Синодальный",
     description: "Современный синодальный текст с привычной русской подачей."
@@ -129,6 +140,9 @@ const TRANSLATION_OPTIONS = [
 const FONT_SCALE_MIN = 0.85;
 const FONT_SCALE_MAX = 1.35;
 const FONT_SCALE_STEP = 0.05;
+const FONT_WEIGHT_MIN = 500;
+const FONT_WEIGHT_MAX = 700;
+const FONT_WEIGHT_STEP = 100;
 
 const FULL_GOSPEL_PRAYER = {
   churchSlavonic:
@@ -465,6 +479,30 @@ function isParallelTranslation() {
   return state.translation === "parallel";
 }
 
+function isChurchSlavonicTranslation(translationId = state.translation) {
+  return translationId === "churchSlavonic" || translationId === "churchSlavonicLiturgical";
+}
+
+function isLiturgicalChurchSlavonic(translationId = state.translation) {
+  return translationId === "churchSlavonicLiturgical";
+}
+
+function getKathismaSourceTranslationId(translationId = state.translation) {
+  return translationId === "synodal" ? "synodal" : "churchSlavonic";
+}
+
+function getChurchSlavonicTextClasses(translationId = state.translation) {
+  if (!isChurchSlavonicTranslation(translationId)) {
+    return "";
+  }
+
+  return isLiturgicalChurchSlavonic(translationId) ? "church-slavonic church-slavonic-liturgical" : "church-slavonic";
+}
+
+function getReadingTextClasses(baseClass, translationId = state.translation) {
+  return [baseClass, getChurchSlavonicTextClasses(translationId)].filter(Boolean).join(" ");
+}
+
 function getTranslationOption(translationId) {
   return TRANSLATION_OPTIONS.find((option) => option.id === translationId) ?? TRANSLATION_OPTIONS[0];
 }
@@ -477,12 +515,21 @@ function clampFontScale(value) {
   return Math.min(FONT_SCALE_MAX, Math.max(FONT_SCALE_MIN, value));
 }
 
+function clampFontWeight(value) {
+  return Math.min(FONT_WEIGHT_MAX, Math.max(FONT_WEIGHT_MIN, value));
+}
+
 function formatFontScale() {
   return `${Math.round(state.fontScale * 100)}%`;
 }
 
+function formatFontWeight() {
+  return String(state.fontWeight);
+}
+
 function applyFontScale() {
   document.documentElement.style.setProperty("--reader-scale", String(state.fontScale));
+  document.documentElement.style.setProperty("--reader-weight", String(state.fontWeight));
 }
 
 function updateFontControls() {
@@ -497,11 +544,30 @@ function updateFontControls() {
   if (fontIncreaseButton) {
     fontIncreaseButton.disabled = state.fontScale >= FONT_SCALE_MAX;
   }
+
+  if (fontWeightValue) {
+    fontWeightValue.textContent = formatFontWeight();
+  }
+
+  if (weightDecreaseButton) {
+    weightDecreaseButton.disabled = state.fontWeight <= FONT_WEIGHT_MIN;
+  }
+
+  if (weightIncreaseButton) {
+    weightIncreaseButton.disabled = state.fontWeight >= FONT_WEIGHT_MAX;
+  }
 }
 
 function setFontScale(nextScale) {
   state.fontScale = clampFontScale(Number(nextScale.toFixed(2)));
   localStorage.setItem(STORAGE_KEYS.fontScale, String(state.fontScale));
+  applyFontScale();
+  updateFontControls();
+}
+
+function setFontWeight(nextWeight) {
+  state.fontWeight = clampFontWeight(nextWeight);
+  localStorage.setItem(STORAGE_KEYS.fontWeight, String(state.fontWeight));
   applyFontScale();
   updateFontControls();
 }
@@ -601,6 +667,30 @@ function applyExternalNamesData() {
 
   if (typeof namesData.departedLabel === "string" && namesData.departedLabel.trim()) {
     DATA.prayers.departedPrayer.namesLabel = namesData.departedLabel.trim();
+  }
+
+  if (namesData.discernmentPrayer && typeof namesData.discernmentPrayer === "object") {
+    const discernmentText = Array.isArray(namesData.discernmentPrayer.text)
+      ? namesData.discernmentPrayer.text.filter((line) => typeof line === "string" && line.trim())
+      : typeof namesData.discernmentPrayer.text === "string" && namesData.discernmentPrayer.text.trim()
+        ? namesData.discernmentPrayer.text.trim()
+        : "";
+
+    DATA.prayers.discernmentPrayer = {
+      title:
+        typeof namesData.discernmentPrayer.title === "string" && namesData.discernmentPrayer.title.trim()
+          ? namesData.discernmentPrayer.title.trim()
+          : "О вразумлении и обращении",
+      text: discernmentText,
+      sections: Array.isArray(namesData.discernmentPrayer.sections)
+        ? namesData.discernmentPrayer.sections
+            .map((section) => ({
+              label: typeof section?.label === "string" ? section.label.trim() : "",
+              names: Array.isArray(section?.names) ? section.names.filter((name) => typeof name === "string" && name.trim()) : []
+            }))
+            .filter((section) => section.label && section.names.length > 0)
+        : []
+    };
   }
 }
 
@@ -1147,10 +1237,43 @@ function renderNameCloud(names) {
   return names.map((name) => `<span class="name-pill">${escapeHtml(name)}</span>`).join("");
 }
 
+function renderDiscernmentPrayerBlock() {
+  const discernmentPrayer = DATA.prayers.discernmentPrayer;
+  const hasPrayerText =
+    typeof discernmentPrayer?.text === "string"
+      ? Boolean(discernmentPrayer.text.trim())
+      : Array.isArray(discernmentPrayer?.text) && discernmentPrayer.text.length > 0;
+
+  if (!hasPrayerText || !Array.isArray(discernmentPrayer.sections) || discernmentPrayer.sections.length === 0) {
+    return "";
+  }
+
+  const prayerTextClass = getReadingTextClasses("prayer-text");
+
+  return `
+    <div class="prayer-block">
+      <h3>${escapeHtml(discernmentPrayer.title || "О вразумлении и обращении")}</h3>
+      <div class="${prayerTextClass}">${renderPrayerText(discernmentPrayer.text)}</div>
+      <div class="discernment-sections">
+        ${discernmentPrayer.sections
+          .map(
+            (section) => `
+              <div class="discernment-section">
+                <div class="names-label">${escapeHtml(section.label)}</div>
+                <div class="name-cloud">${renderNameCloud(section.names)}</div>
+              </div>
+            `
+          )
+          .join("")}
+      </div>
+    </div>
+  `;
+}
+
 function renderPsalmInner(psalm, translationId) {
   const heading = psalm.heading ? `<div class="psalm-heading">${escapeHtml(psalm.heading)}</div>` : "";
   const subtitle = psalm.subtitle ? `<span class="psalm-subtitle">${escapeHtml(psalm.subtitle)}</span>` : "";
-  const textClass = translationId === "churchSlavonic" ? "psalm-text church-slavonic" : "psalm-text";
+  const textClass = getReadingTextClasses("psalm-text", translationId);
 
   const verses = psalm.verses
     .map(
@@ -1200,12 +1323,14 @@ function renderParallelPsalmCard(churchPsalm, synodalPsalm) {
 
 function renderPrayerCard(prayerType, segmentIndex) {
   const prayer = prayerType === "living" ? DATA.prayers.livingPrayer : DATA.prayers.departedPrayer;
+  const prayerTextClass = getReadingTextClasses("prayer-text");
+  const doxologyClass = getReadingTextClasses("doxology");
 
   return `
     <article class="prayer-card">
       <h3>${escapeHtml(`После ${segmentIndex}-й славы`)}</h3>
-      <div class="doxology">${renderPrayerLines(DATA.prayers.slava)}</div>
-      <div class="prayer-text">${renderPrayerText(prayer.text)}</div>
+      <div class="${doxologyClass}">${renderPrayerLines(DATA.prayers.slava)}</div>
+      <div class="${prayerTextClass}">${renderPrayerText(prayer.text)}</div>
       <div class="names-label">${escapeHtml(prayer.namesLabel)}</div>
       <div class="name-cloud">${renderNameCloud(prayer.names)}</div>
     </article>
@@ -1235,6 +1360,7 @@ function renderGospelAfterSecondSlava() {
     "Апо́столе святы́й Матфе́е, моли́ Ми́лостиваго Бо́га, да прегреше́ний оставле́ние пода́ст душа́м на́шим.";
   const preparationLines =
     state.prayerVersion === "full" ? [gospelTroparion, getGospelPreparationPrayer()] : [getGospelPreparationPrayer()];
+  const preparationTextClass = getReadingTextClasses("prayer-text");
   const afterGospelBlock =
     state.prayerVersion === "full"
       ? `
@@ -1262,7 +1388,7 @@ function renderGospelAfterSecondSlava() {
       </p>
       <div class="prayer-block">
         <h3>Перед Евангелием</h3>
-        <div class="prayer-text">${renderPrayerLines(preparationLines)}</div>
+        <div class="${preparationTextClass}">${renderPrayerLines(preparationLines)}</div>
       </div>
       <div class="gospel-text">${verses}</div>
       ${afterGospelBlock}
@@ -1271,6 +1397,8 @@ function renderGospelAfterSecondSlava() {
 }
 
 function renderAfterKathismaSection(kathismaId) {
+  const prayerTextClass = getReadingTextClasses("prayer-text");
+
   if (state.prayerVersion === "short") {
     return `
       <section class="reading-section" id="after-kathisma">
@@ -1280,7 +1408,7 @@ function renderAfterKathismaSection(kathismaId) {
         </div>
         <div class="prayer-flow">
           <div class="prayer-block">
-            <div class="prayer-text">${renderPrayerLines(DATA.prayers.afterKathisma)}</div>
+            <div class="${prayerTextClass}">${renderPrayerLines(DATA.prayers.afterKathisma)}</div>
           </div>
         </div>
       </section>
@@ -1298,7 +1426,7 @@ function renderAfterKathismaSection(kathismaId) {
         </div>
         <div class="prayer-flow">
           <div class="prayer-block">
-            <div class="prayer-text">${renderPrayerLines(DATA.prayers.afterKathisma)}</div>
+            <div class="${prayerTextClass}">${renderPrayerLines(DATA.prayers.afterKathisma)}</div>
           </div>
         </div>
       </section>
@@ -1318,11 +1446,11 @@ function renderAfterKathismaSection(kathismaId) {
       <div class="prayer-flow">
         <div class="prayer-block">
           <h3>Трисвятое по Отче наш</h3>
-          <div class="prayer-text">${renderPrayerLines(DATA.prayers.commonBeginning.slice(3, 9))}</div>
+          <div class="${prayerTextClass}">${renderPrayerLines(DATA.prayers.commonBeginning.slice(3, 9))}</div>
         </div>
         <div class="prayer-block">
           <h3>Тропари после кафизмы</h3>
-          <div class="prayer-text">
+          <div class="${prayerTextClass}">
             <p><strong>${escapeHtml(fullBlock.intro)}</strong></p>
             ${renderPrayerLines(fullBlock.troparia)}
             <p>${escapeHtml(fullBlock.lordHaveMercy)}</p>
@@ -1330,11 +1458,12 @@ function renderAfterKathismaSection(kathismaId) {
         </div>
         <div class="prayer-block">
           <h3>Молитва по соглашению</h3>
-          <div class="prayer-text">${renderPrayerLines(DATA.prayers.afterKathisma)}</div>
+          <div class="${prayerTextClass}">${renderPrayerLines(DATA.prayers.afterKathisma)}</div>
         </div>
+        ${renderDiscernmentPrayerBlock()}
         <div class="prayer-block">
           <h3>Последняя молитва после кафизмы</h3>
-          <div class="prayer-text">${renderPrayerText(fullBlock.prayer)}</div>
+          <div class="${prayerTextClass}">${renderPrayerText(fullBlock.prayer)}</div>
         </div>
       </div>
     </section>
@@ -1348,6 +1477,8 @@ function renderWeekdayHymnsSection() {
     return "";
   }
 
+  const prayerTextClass = getReadingTextClasses("prayer-text");
+
   return `
     <article class="prayer-card weekday-hymns-card" id="weekday-troparia">
       <h3>${escapeHtml(weekdayHymns.title)}</h3>
@@ -1360,11 +1491,11 @@ function renderWeekdayHymnsSection() {
                 <h3>${escapeHtml(section.label)}</h3>
                 <div class="weekday-hymn-piece">
                   <div class="names-label">Тропарь</div>
-                  <div class="prayer-text">${renderPrayerText(getWeekdayHymnText(section.troparion))}</div>
+                  <div class="${prayerTextClass}">${renderPrayerText(getWeekdayHymnText(section.troparion))}</div>
                 </div>
                 <div class="weekday-hymn-piece">
                   <div class="names-label">Кондак</div>
-                  <div class="prayer-text">${renderPrayerText(getWeekdayHymnText(section.kontakion))}</div>
+                  <div class="${prayerTextClass}">${renderPrayerText(getWeekdayHymnText(section.kontakion))}</div>
                 </div>
               </div>
             `
@@ -1413,9 +1544,10 @@ function renderReading(kathismaNumber) {
   const parallelMode = isParallelTranslation();
   const churchKathisma = getKathismaData("churchSlavonic", kathismaNumber);
   const synodalKathisma = getKathismaData("synodal", kathismaNumber);
-  const kathisma = parallelMode ? churchKathisma : getKathismaData(state.translation, kathismaNumber);
+  const kathisma = parallelMode ? churchKathisma : getKathismaData(getKathismaSourceTranslationId(), kathismaNumber);
   const translationLabel = getTranslationLabel();
   const prayerModeLabel = getAfterKathismaModeLabel();
+  const prayerTextClass = getReadingTextClasses("prayer-text");
   const uniquePsalmCount = new Set(kathisma.segments.flatMap((segment) => segment.psalms.map((psalm) => psalm.number))).size;
 
   let psalmWord = "псалмов";
@@ -1482,7 +1614,7 @@ function renderReading(kathismaNumber) {
       </div>
       <div class="prayer-flow">
         <div class="prayer-block">
-          <div class="prayer-text">${renderPrayerLines(getCommonBeginningLines())}</div>
+          <div class="${prayerTextClass}">${renderPrayerLines(getCommonBeginningLines())}</div>
         </div>
       </div>
     </section>
@@ -1531,6 +1663,7 @@ function initialize() {
   state.translation = TRANSLATION_OPTIONS.some((option) => option.id === savedTranslation) ? savedTranslation : "churchSlavonic";
   state.prayerVersion = localStorage.getItem(STORAGE_KEYS.prayerVersion) || "full";
   state.fontScale = clampFontScale(Number(localStorage.getItem(STORAGE_KEYS.fontScale) || 1));
+  state.fontWeight = clampFontWeight(Number(localStorage.getItem(STORAGE_KEYS.fontWeight) || 500));
   applyFontScale();
 
   const savedKathisma = Number(localStorage.getItem(STORAGE_KEYS.kathisma) || 1);
@@ -1553,6 +1686,19 @@ function initialize() {
   fontResetButton?.addEventListener("click", () => {
     setFontScale(1);
     updateSelectionState("Размер шрифта сброшен.");
+  });
+
+  weightDecreaseButton?.addEventListener("click", () => {
+    setFontWeight(state.fontWeight - FONT_WEIGHT_STEP);
+  });
+
+  weightIncreaseButton?.addEventListener("click", () => {
+    setFontWeight(state.fontWeight + FONT_WEIGHT_STEP);
+  });
+
+  weightResetButton?.addEventListener("click", () => {
+    setFontWeight(500);
+    updateSelectionState("Толщина шрифта сброшена.");
   });
 
   copySelectionButton?.addEventListener("click", () => {

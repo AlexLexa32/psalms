@@ -1,5 +1,6 @@
 :root {
   --reader-scale: 1;
+  --reader-weight: 500;
   --bg-main: #efe4d1;
   --bg-soft: rgba(255, 250, 241, 0.82);
   --bg-card: rgba(255, 252, 246, 0.88);
@@ -598,6 +599,7 @@ input[type="date"]:focus {
 .footer p {
   margin: 0;
   line-height: 1.8;
+  font-weight: var(--reader-weight);
 }
 
 .reading-stack {
@@ -659,6 +661,7 @@ input[type="date"]:focus {
   border-bottom: 1px solid rgba(125, 43, 33, 0.08);
   color: var(--text-soft);
   font-style: italic;
+  font-weight: var(--reader-weight);
 }
 
 .verse {
@@ -672,15 +675,30 @@ input[type="date"]:focus {
   font-size: 0.9rem;
 }
 
+.verse-text {
+  font-weight: var(--reader-weight);
+}
+
 .church-slavonic .verse-text,
 .church-slavonic .psalm-heading {
   font-family: "Times New Roman", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+}
+
+.church-slavonic-liturgical .verse-text,
+.church-slavonic-liturgical .psalm-heading,
+.church-slavonic-liturgical p {
+  font-family: "Ponomar", "Times New Roman", "Palatino Linotype", "Book Antiqua", Georgia, serif;
 }
 
 .church-slavonic .verse-text {
   font-size: 1.05rem;
   line-height: 1.95;
   letter-spacing: 0.01em;
+}
+
+.church-slavonic-liturgical .verse-text,
+.church-slavonic-liturgical p {
+  line-height: 1.95;
 }
 
 .parallel-psalm-grid {
@@ -761,6 +779,16 @@ input[type="date"]:focus {
   font-size: 0.92rem;
 }
 
+.discernment-sections {
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.discernment-section .names-label {
+  margin-top: 0;
+}
+
 .gospel-card {
   border-color: rgba(125, 43, 33, 0.16);
   background:
@@ -820,6 +848,7 @@ input[type="date"]:focus {
 
 .gospel-verse-text {
   line-height: 1.85;
+  font-weight: var(--reader-weight);
 }
 
 .troparion-section {
