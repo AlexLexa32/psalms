@@ -1237,6 +1237,29 @@ function renderNameCloud(names) {
   return names.map((name) => `<span class="name-pill">${escapeHtml(name)}</span>`).join("");
 }
 
+function renderDiscernmentSections() {
+  const discernmentPrayer = DATA.prayers.discernmentPrayer;
+
+  if (!Array.isArray(discernmentPrayer?.sections) || discernmentPrayer.sections.length === 0) {
+    return "";
+  }
+
+  return `
+    <div class="discernment-sections">
+      ${discernmentPrayer.sections
+        .map(
+          (section) => `
+            <div class="discernment-section">
+              <div class="names-label">${escapeHtml(section.label)}</div>
+              <div class="name-cloud">${renderNameCloud(section.names)}</div>
+            </div>
+          `
+        )
+        .join("")}
+    </div>
+  `;
+}
+
 function renderDiscernmentPrayerBlock() {
   const discernmentPrayer = DATA.prayers.discernmentPrayer;
   const hasPrayerText =
@@ -1254,18 +1277,7 @@ function renderDiscernmentPrayerBlock() {
     <div class="prayer-block">
       <h3>${escapeHtml(discernmentPrayer.title || "О вразумлении и обращении")}</h3>
       <div class="${prayerTextClass}">${renderPrayerText(discernmentPrayer.text)}</div>
-      <div class="discernment-sections">
-        ${discernmentPrayer.sections
-          .map(
-            (section) => `
-              <div class="discernment-section">
-                <div class="names-label">${escapeHtml(section.label)}</div>
-                <div class="name-cloud">${renderNameCloud(section.names)}</div>
-              </div>
-            `
-          )
-          .join("")}
-      </div>
+      ${renderDiscernmentSections()}
     </div>
   `;
 }
@@ -1371,6 +1383,7 @@ function renderGospelAfterSecondSlava() {
           <div class="name-cloud">${renderNameCloud(DATA.prayers.livingPrayer.names)}</div>
           <div class="names-label">${escapeHtml(DATA.prayers.departedPrayer.namesLabel)}</div>
           <div class="name-cloud">${renderNameCloud(DATA.prayers.departedPrayer.names)}</div>
+          ${renderDiscernmentSections()}
         </div>
       `
       : "";
@@ -1410,6 +1423,7 @@ function renderAfterKathismaSection(kathismaId) {
           <div class="prayer-block">
             <div class="${prayerTextClass}">${renderPrayerLines(DATA.prayers.afterKathisma)}</div>
           </div>
+          ${renderDiscernmentPrayerBlock()}
         </div>
       </section>
     `;
@@ -1428,6 +1442,7 @@ function renderAfterKathismaSection(kathismaId) {
           <div class="prayer-block">
             <div class="${prayerTextClass}">${renderPrayerLines(DATA.prayers.afterKathisma)}</div>
           </div>
+          ${renderDiscernmentPrayerBlock()}
         </div>
       </section>
     `;
