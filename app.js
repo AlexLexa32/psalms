@@ -1254,17 +1254,21 @@ function renderDiscernmentSections() {
   }
 
   return `
-    <div class="discernment-sections">
+    <details class="names-disclosure">
+      <summary>О воцерковлении и обращении <span class="names-count">(${discernmentPrayer.sections.reduce((total, section) => total + section.names.length, 0)})</span></summary>
+      <div class="discernment-sections">
       ${discernmentPrayer.sections
         .map(
           (section) => `
             <div class="discernment-section">
-              ${renderNamesDisclosure(section.label, section.names)}
+              <div class="names-label">${escapeHtml(section.label)}</div>
+              <div class="name-cloud">${renderNameCloud(section.names)}</div>
             </div>
           `
         )
         .join("")}
-    </div>
+      </div>
+    </details>
   `;
 }
 
