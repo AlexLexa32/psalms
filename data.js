@@ -399,8 +399,8 @@ window.PSALTER_APP_DATA = {
   },
   "gospelMatthew": {
     "translationLabel": "Синодальный перевод",
-    "cycleStartDate": "2026-08-15",
-    "cycleStartZachalo": 31,
+    "cycleStartDate": "2026-11-28",
+    "cycleStartZachalo": 44,
     "zachala": [
       {
         "number": 1,
