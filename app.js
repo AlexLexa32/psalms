@@ -1562,6 +1562,28 @@ function renderTroparionSection() {
   `;
 }
 
+function renderNativityIrmos() {
+  if (state.prayerVersion !== "full" || getDateStringForTimezone(MOSCOW_TIMEZONE) < "2026-12-04") {
+    return "";
+  }
+
+  return `
+    <article class="prayer-card">
+      <h3>Ирмос «Христос раждается»</h3>
+      <div class="${getReadingTextClasses("prayer-text")}">
+        ${renderPrayerLines([
+          "Христос раждается — славите,",
+          "Христос с Небес — срящите.",
+          "Христос на земли — возноситеся.",
+          "Пойте Господеви, вся земля,",
+          "и веселием воспойте, людие,",
+          "яко прославися."
+        ])}
+      </div>
+    </article>
+  `;
+}
+
 function renderReading(kathismaNumber) {
   const parallelMode = isParallelTranslation();
   const churchKathisma = getKathismaData("churchSlavonic", kathismaNumber);
@@ -1600,6 +1622,7 @@ function renderReading(kathismaNumber) {
                 : renderPsalmCard(psalm, state.translation)
             )
             .join("")}
+          ${index === kathisma.segments.length - 1 ? renderNativityIrmos() : ""}
           ${renderPrayerCard(segment.prayerType, index + 1)}
           ${index === 0 ? renderWeekdayHymnsSection() : ""}
           ${index === 1 ? renderGospelAfterSecondSlava() : ""}
