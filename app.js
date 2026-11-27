@@ -1237,6 +1237,15 @@ function renderNameCloud(names) {
   return names.map((name) => `<span class="name-pill">${escapeHtml(name)}</span>`).join("");
 }
 
+function renderNamesDisclosure(label, names) {
+  return `
+    <details class="names-disclosure">
+      <summary>${escapeHtml(label)} <span class="names-count">(${names.length})</span></summary>
+      <div class="name-cloud">${renderNameCloud(names)}</div>
+    </details>
+  `;
+}
+
 function renderDiscernmentSections() {
   const discernmentPrayer = DATA.prayers.discernmentPrayer;
 
@@ -1250,8 +1259,7 @@ function renderDiscernmentSections() {
         .map(
           (section) => `
             <div class="discernment-section">
-              <div class="names-label">${escapeHtml(section.label)}</div>
-              <div class="name-cloud">${renderNameCloud(section.names)}</div>
+              ${renderNamesDisclosure(section.label, section.names)}
             </div>
           `
         )
@@ -1343,8 +1351,7 @@ function renderPrayerCard(prayerType, segmentIndex) {
       <h3>${escapeHtml(`После ${segmentIndex}-й славы`)}</h3>
       <div class="${doxologyClass}">${renderPrayerLines(DATA.prayers.slava)}</div>
       <div class="${prayerTextClass}">${renderPrayerText(prayer.text)}</div>
-      <div class="names-label">${escapeHtml(prayer.namesLabel)}</div>
-      <div class="name-cloud">${renderNameCloud(prayer.names)}</div>
+      ${renderNamesDisclosure(prayer.namesLabel, prayer.names)}
     </article>
   `;
 }
@@ -1379,10 +1386,8 @@ function renderGospelAfterSecondSlava() {
         <div class="prayer-block">
           <h3>Молитва после Евангелия</h3>
           <div class="prayer-text">${renderPrayerText(DATA.prayers.gospelBeforeMatthew?.afterPrayer || GOSPEL_AFTER_PRAYER)}</div>
-          <div class="names-label">Имена после Евангелия</div>
-          <div class="name-cloud">${renderNameCloud(DATA.prayers.livingPrayer.names)}</div>
-          <div class="names-label">${escapeHtml(DATA.prayers.departedPrayer.namesLabel)}</div>
-          <div class="name-cloud">${renderNameCloud(DATA.prayers.departedPrayer.names)}</div>
+          ${renderNamesDisclosure(DATA.prayers.livingPrayer.namesLabel, DATA.prayers.livingPrayer.names)}
+          ${renderNamesDisclosure(DATA.prayers.departedPrayer.namesLabel, DATA.prayers.departedPrayer.names)}
           ${renderDiscernmentSections()}
         </div>
       `

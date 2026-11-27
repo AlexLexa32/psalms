@@ -767,6 +767,31 @@ input[type="date"]:focus {
   margin-top: 12px;
 }
 
+.names-disclosure {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.names-disclosure summary {
+  cursor: pointer;
+  color: var(--accent-strong);
+  line-height: 1.5;
+}
+
+.names-disclosure summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.names-count {
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+
 .name-pill {
   display: inline-flex;
   align-items: center;
