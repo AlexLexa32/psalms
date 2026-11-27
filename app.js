@@ -1255,7 +1255,7 @@ function renderDiscernmentSections() {
 
   return `
     <details class="names-disclosure">
-      <summary>О воцерковлении и обращении <span class="names-count">(${discernmentPrayer.sections.reduce((total, section) => total + section.names.length, 0)})</span></summary>
+      <summary>Имена <span class="names-count">(${discernmentPrayer.sections.reduce((total, section) => total + section.names.length, 0)})</span></summary>
       <div class="discernment-sections">
       ${discernmentPrayer.sections
         .map(
