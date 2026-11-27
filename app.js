@@ -1537,22 +1537,21 @@ function renderTroparionSection() {
         <p class="card-kicker">На сегодня</p>
         <h2>Тропари дня</h2>
         <p class="section-lead">
-          Открывается раздел «Тропари» на ${escapeHtml(troparion.formattedDate)} по московскому времени.
+          Тропарь апостолу Филиппу, глас 3. Память 27 ноября.
         </p>
       </div>
       <div class="troparion-actions">
         <a class="ghost-link-button" href="${escapeHtml(troparion.url)}" target="_blank" rel="noreferrer">
-          Открыть отдельно
+          Тропари на ${escapeHtml(troparion.formattedDate)} на Азбуке
         </a>
       </div>
-      <div class="troparion-frame-shell">
-        <iframe
-          class="troparion-frame"
-          src="${escapeHtml(troparion.url)}"
-          title="Тропари дня из Азбуки веры"
-          loading="lazy"
-          referrerpolicy="no-referrer"
-        ></iframe>
+      <div class="${getReadingTextClasses("prayer-text")}">
+        ${renderPrayerLines([
+          "Апо́столе святы́й Фили́ппе,",
+          "моли́ Ми́лостивого Бо́га,",
+          "да прегреше́ний оставле́ние",
+          "пода́ст душа́м на́шим."
+        ])}
       </div>
       <p class="troparion-source">
         Источник:
