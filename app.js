@@ -1364,8 +1364,10 @@ function renderPrayerCard(prayerType, segmentIndex) {
     <article class="prayer-card">
       <h3>${escapeHtml(`После ${segmentIndex}-й славы`)}</h3>
       <div class="${doxologyClass}">${renderPrayerLines(DATA.prayers.slava)}</div>
-      <div class="${prayerTextClass}">${renderPrayerText(prayer.text)}</div>
-      ${renderNamesDisclosure(prayer.namesLabel, prayer.names)}
+      ${segmentIndex === 2 ? "" : `
+        <div class="${prayerTextClass}">${renderPrayerText(prayer.text)}</div>
+        ${renderNamesDisclosure(prayer.namesLabel, prayer.names)}
+      `}
     </article>
   `;
 }
@@ -1615,7 +1617,7 @@ function renderReading(kathismaNumber) {
           <div class="segment-header">
             <h3>${escapeHtml(segment.label)}</h3>
             <span class="segment-note">${
-              segment.prayerType === "living" ? "После славы — молитва о живых" : "После славы — молитва об усопших"
+              index === 1 ? "После славы — Евангелие" : segment.prayerType === "living" ? "После славы — молитва о живых" : "После славы — молитва об усопших"
             }</span>
           </div>
           ${segment.psalms
