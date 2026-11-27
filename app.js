@@ -978,7 +978,11 @@ function getSundayTone(dateString) {
 }
 
 function getWeekdayHymnText(textSet) {
-  return state.translation === "synodal" ? textSet.synodal : textSet.churchSlavonic;
+  return usesRussianPrayers() ? textSet.synodal : textSet.churchSlavonic;
+}
+
+function usesRussianPrayers() {
+  return state.translation === "synodal" || state.translation === "yungerov";
 }
 
 function getWeekdayHymnsForToday() {
@@ -1149,10 +1153,10 @@ function getGospelPreparationPrayer() {
   }
 
   if (gospelPrayers?.fullPrayer) {
-    return state.translation === "synodal" ? gospelPrayers.fullPrayer.synodal : gospelPrayers.fullPrayer.churchSlavonic;
+    return usesRussianPrayers() ? gospelPrayers.fullPrayer.synodal : gospelPrayers.fullPrayer.churchSlavonic;
   }
 
-  return state.translation === "synodal" ? FULL_GOSPEL_PRAYER.synodal : FULL_GOSPEL_PRAYER.churchSlavonic;
+  return usesRussianPrayers() ? FULL_GOSPEL_PRAYER.synodal : FULL_GOSPEL_PRAYER.churchSlavonic;
 }
 
 function populateKathismaSelect() {
