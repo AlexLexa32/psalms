@@ -1289,7 +1289,6 @@ function renderDiscernmentPrayerBlock() {
     <div class="prayer-block">
       <h3>${escapeHtml(discernmentPrayer.title || "О вразумлении и обращении")}</h3>
       <div class="${prayerTextClass}">${renderPrayerText(discernmentPrayer.text)}</div>
-      ${renderDiscernmentSections()}
     </div>
   `;
 }
@@ -1390,8 +1389,6 @@ function renderGospelAfterSecondSlava() {
         <div class="prayer-block">
           <h3>Молитва после Евангелия</h3>
           <div class="prayer-text">${renderPrayerText(DATA.prayers.gospelBeforeMatthew?.afterPrayer || GOSPEL_AFTER_PRAYER)}</div>
-          ${renderNamesDisclosure(DATA.prayers.livingPrayer.namesLabel, DATA.prayers.livingPrayer.names)}
-          ${renderNamesDisclosure(DATA.prayers.departedPrayer.namesLabel, DATA.prayers.departedPrayer.names)}
           ${renderDiscernmentSections()}
         </div>
       `
