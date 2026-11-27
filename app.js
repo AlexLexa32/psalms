@@ -1383,16 +1383,13 @@ function renderGospelAfterSecondSlava() {
   const preparationLines =
     state.prayerVersion === "full" ? [gospelTroparion, getGospelPreparationPrayer()] : [getGospelPreparationPrayer()];
   const preparationTextClass = getReadingTextClasses("prayer-text");
-  const afterGospelBlock =
-    state.prayerVersion === "full"
-      ? `
+  const afterGospelBlock = `
         <div class="prayer-block">
           <h3>Молитва после Евангелия</h3>
           <div class="prayer-text">${renderPrayerText(DATA.prayers.gospelBeforeMatthew?.afterPrayer || GOSPEL_AFTER_PRAYER)}</div>
           ${renderDiscernmentSections()}
         </div>
-      `
-      : "";
+      `;
 
   return `
     <article class="prayer-card gospel-card" id="matthew-gospel">
