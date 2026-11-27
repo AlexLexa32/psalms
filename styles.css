@@ -675,6 +675,10 @@ input[type="date"]:focus {
   font-size: 0.9rem;
 }
 
+.yungerov-text .verse {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .verse-text {
   font-weight: var(--reader-weight);
 }

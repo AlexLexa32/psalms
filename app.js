@@ -132,6 +132,11 @@ const TRANSLATION_OPTIONS = [
     description: "Современный синодальный текст с привычной русской подачей."
   },
   {
+    id: "yungerov",
+    label: "Юнгеров",
+    description: "Русский перевод П. А. Юнгерова с греческого текста."
+  },
+  {
     id: "parallel",
     label: "Параллельно",
     description: "ЦСЯ и синодальный перевод рядом, в двух столбцах."
@@ -488,6 +493,7 @@ function isLiturgicalChurchSlavonic(translationId = state.translation) {
 }
 
 function getKathismaSourceTranslationId(translationId = state.translation) {
+  if (translationId === "yungerov") return "yungerov";
   return translationId === "synodal" ? "synodal" : "churchSlavonic";
 }
 
@@ -892,6 +898,7 @@ function normalizeLoadedData() {
   }
 
   for (const translationId of Object.keys(DATA.kathismas)) {
+    if (translationId === "yungerov") continue;
     for (const kathisma of DATA.kathismas[translationId]) {
       for (const segment of kathisma.segments) {
         for (const psalm of segment.psalms) {
@@ -1302,7 +1309,7 @@ function renderPsalmInner(psalm, translationId) {
     .map(
       (verse) => `
         <div class="verse">
-          <div class="verse-number">${verse.number}</div>
+          ${translationId === "yungerov" ? "" : `<div class="verse-number">${verse.number}</div>`}
           <div class="verse-text">${escapeHtml(verse.text)}</div>
         </div>
       `
@@ -1315,7 +1322,7 @@ function renderPsalmInner(psalm, translationId) {
       ${subtitle}
     </div>
     ${heading}
-    <div class="${textClass}">${verses}</div>
+    <div class="${textClass}${translationId === "yungerov" ? " yungerov-text" : ""}">${verses}</div>
   `;
 }
 
