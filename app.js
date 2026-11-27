@@ -1429,7 +1429,6 @@ function renderAfterKathismaSection(kathismaId) {
           <div class="prayer-block">
             <div class="${prayerTextClass}">${renderPrayerLines(DATA.prayers.afterKathisma)}</div>
           </div>
-          ${renderDiscernmentPrayerBlock()}
         </div>
       </section>
     `;
@@ -1448,7 +1447,6 @@ function renderAfterKathismaSection(kathismaId) {
           <div class="prayer-block">
             <div class="${prayerTextClass}">${renderPrayerLines(DATA.prayers.afterKathisma)}</div>
           </div>
-          ${renderDiscernmentPrayerBlock()}
         </div>
       </section>
     `;
@@ -1481,7 +1479,6 @@ function renderAfterKathismaSection(kathismaId) {
           <h3>Молитва по соглашению</h3>
           <div class="${prayerTextClass}">${renderPrayerLines(DATA.prayers.afterKathisma)}</div>
         </div>
-        ${renderDiscernmentPrayerBlock()}
         <div class="prayer-block">
           <h3>Последняя молитва после кафизмы</h3>
           <div class="${prayerTextClass}">${renderPrayerText(fullBlock.prayer)}</div>
